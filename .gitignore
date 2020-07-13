@@ -1,0 +1,8 @@
+*.mod
+*.o
+*.a
+*.x
+*.nc
+bin/*
+*.swp
+*.tar.gz

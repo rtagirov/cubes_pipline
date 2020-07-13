@@ -99,6 +99,7 @@
 
 
 ! --------------- READ FITS files + fits routines ---------------------------------
+#ifdef FITS
 
   subroutine read_cube_fits(filename, nx, ny, nz, outarr)
    implicit none 
@@ -326,7 +327,7 @@
 
 ! *************************************************************************
 
-
+#endif
 
 
 

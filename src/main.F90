@@ -11,9 +11,11 @@
   integer sizee, myrank
 !--- cube dimensions 
   integer  Nzz, Ni, Nt, Nx, Ny, Nz, Nzcut 
+! -- additional for a second kappa table
+  integer nump2, numt2
 
 ! --- for writting nc files
-  integer ier, ncid, fnx, fny, fnz 
+  integer ier, ncid 
 ! --- loop integers
   integer i,j,k,m
 
@@ -44,6 +46,7 @@
 !--- functions -----------------------------------------------!  
   real(kind=8) introssk
   integer      map1
+
 
 
 
@@ -154,9 +157,12 @@
 
    else if (fitsread) then 
 ! ---- if fits call fits read 
+#ifdef FITS
      call read_cube_fits(filename3, nx, ny, nz, rho)
      call read_cube_fits(filename1, nx, ny, nz, T)
      call read_cube_fits(filename2, nx, ny, nz, P)
+#endif 
+
    else 
 
     print*,' ERROR, it is not specified in which format to read the cubes' 
@@ -190,8 +196,6 @@
     summean = 0.0d0 
     onepoint = 1.0d0 
 
-!--- for debugging: 
-    Nx = 2
 
       do i = 1, Nx
         do k = 1, Ny
@@ -216,7 +220,7 @@
       end do 
 
      summean = summean/(Nx*Ny)
-     print*, ' Summean = ', summean 
+     print*, ' Pivot = ', summean 
   
 !-------------------------------------------------------------------------!
 !    --------   DO the ROTATION ------------------------------------------!
@@ -236,11 +240,26 @@
        print*, ' Read kappa table for tau - 200 calculation after rotation '
 !---- get the other kappa table: 
        open(unit =2, file='kappa_table.dat', form='formatted', status='old')
-       read(2,*) numt, numpres
+       read(2,*) numt2, nump2
+     
 ! ---- make sure that the numt, numpress in this table are <= than in the tau table because 
 !      of allocation, IN CASE THIS IS NOT TURE: 
 !      - deallocate kappatab, tabt, tabp, 
 !      - allocate with new dimensions, and read in !
+       if ((numt2 .gt. numt) .or. (nump2 .gt. numpres)) then 
+         deallocate(tabt)
+         deallocate(tabp)
+         deallocate(kappatab)
+     
+         allocate(kappatab(numt2, nump2))
+         allocate(tabt(numt2))
+         allocate(tabp(nump2))
+         numt = numt2
+         numpres = nump2
+
+       endif  
+
+
  
        read(2,*) (tabt(i), i = 1 , numt)
        read(2,*) (tabp(i), i = 1, numpres)
@@ -298,7 +317,6 @@
 !  --- with an easier solution there are two possibilities: 
 
 !   1) ----:
-
      if (ifmu) then 
       print*, ' get temporary arrays, get tau Rosseland and interpolate'  
       do i = 1, Nx
@@ -313,11 +331,10 @@
              kappa(j) = kappa(j)* tempr(j)
 
             end do
-! debug: 
 
 ! inegrate to get tau
          call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
-
+!    
          indum = map1(taut, tempt, Nzcut, taugrid, tempa, Ngrid)
          outT(i,k,1:Ngrid) = tempa(1:Ngrid)
 
@@ -331,10 +348,9 @@
 ! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
          maxz = maxval(tempa)
          do  j = 1, Ngrid  
-           outz(i,k,j) = abs(tempa(j) - maxz)
+           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
          end do  
           
-         
 
         end do
       end do
@@ -350,10 +366,10 @@
              tempr(j) = rho(i,k, Nzcut-j+1)
              taut(j) =  tau(i,k, j)
             end do 
-            
+
             indum = map1(taut, tempt, Nzcut, taugrid, tempa, Ngrid)
             outT(i,k,1:Ngrid) = tempa(1:Ngrid)
-
+ 
             indum = map1(taut, tempp, Nzcut, taugrid, tempa, Ngrid)
             outP(i,k,1:Ngrid) = tempa(1:Ngrid)
 
@@ -363,16 +379,13 @@
             indum = map1(taut, zgrid, Nzcut, taugrid, tempa, Ngrid)
 ! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
             maxz = maxval(tempa)
-
-            do  j = 1, Nzcut
-              outz(i,k,j) = abs(tempa(j) - maxz)
+            do  j = 1, Ngrid 
+              outz(i,k,j) = real( abs(tempa(j) - maxz), 4)
             end do
-
 
           end do  
        end do 
      endif 
-
 
 
 
@@ -384,8 +397,8 @@
 
 
     print*, ' Finished all claculations let us write stuff out!' 
-    
-    if (gettaug) then 
+ 
+     if (gettaug) then 
 
       Nzz = Ngrid
       !---- need to get mu as a number for the file name:
@@ -424,7 +437,7 @@
 
 
 
-    else if (tau200 .or. ifmu) then 
+     else if (tau200 .or. ifmu) then 
 ! write new NetCDF file for bv and tau_ross
         Nzz = Nz
         if(ifmu) Nzz = Nzcut
@@ -469,12 +482,11 @@
      end if 
 
 
-
+     print*, ' all done, tidying up!' 
 !------ tidy up ! ---------- never leave a mess ;) ---------------------!
- 
+       if(ifmu) call close_muarrays
+       if(gettaug) call close_tarrays
        call close_arrays 
-       if (ifmu) call close_muarrays
-       if (gettaug) call close_tarrays
 
 
    end

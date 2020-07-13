@@ -56,7 +56,7 @@
       do i = 1, Nx
         do k = 1, Ny
            do j = 1, Nzcut
-             jj = (Nzcut -j +1)
+!             jj = (Nzcut -j +1)
 
              xn = xl(j)+(k-1)
 
@@ -69,16 +69,14 @@
              xnp = xn+1
              if(xnp .gt. Ny) xnp = mod(xnp, Ny)
              
-          newT(i,k,jj) = T(i, xn, (Nz-zl(j))) * (1.0d0-xf(j)) + xf(j)*T(i, xnp,  (Nz-zl(j)))
-          newT(i,k,jj) = newT(i,k,jj)*(1.0d0 -xf(j)) +   xf(j)*(T(i, xn, (Nz-zl(j)-1))*(1.0d0-xf(j))+ xf(j)*T(i, xnp,(Nz-zl(j)-1)))
+          newT(i,k,j) = (T(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*T(i, xnp,  zl(j))) *(1.0d0+ zf(j))
+          newT(i,k,j) = newT(i,k,j) -  zf(j)*(T(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*T(i, xnp,zl(j)+1))
 !
-
-          newP(i,k,jj) = P(i,xn,(Nz-zl(j))) * (1.0d0-xf(j)) +   xf(j)*P(i, xnp, (Nz-zl(j)))
-          newP(i,k,jj) = newP(i,k,jj)*(1.0d0 -xf(j)) + xf(j)*(P(i, xn, (Nz-zl(j)-1))*(1.0d0-xf(j))+   xf(j)*P(i, xnp, (Nz-zl(j)-1)))
+          newP(i,k,j) = (P(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*P(i, xnp,  zl(j))) *(1.0d0+ zf(j))
+          newP(i,k,j) = newP(i,k,j) -  zf(j)*(P(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*P(i, xnp,zl(j)+1))
 !
-
-        newrho(i,k,jj) =rho(i, xn, (Nz-zl(j)))*(1.0d0-xf(j)) +   xf(j)*rho(i, xnp,  (Nz-zl(j)))
-        newrho(i,k,jj) = newrho(i,k,jj)*(1.0d0 -xf(j)) +  xf(j)*(rho(i, xn, (Nz-zl(j)-1))*(1.0d0-xf(j))+  xf(j)*rho(i, xnp, (Nz-zl(j)-1))  )
+          newrho(i,k,j) = (rho(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*rho(i, xnp,  zl(j))) *(1.0d0+ zf(j))
+          newrho(i,k,j) = newrho(i,k,j) -  zf(j)*(rho(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*rho(i, xnp,zl(j)+1))
 !
 
            end do

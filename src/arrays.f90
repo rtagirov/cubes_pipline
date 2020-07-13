@@ -166,14 +166,14 @@ Module arrays
 
  subroutine close_tarrays
   implicit none
- 
-  deallocate(taugrid)
-  deallocate(tempa)
-  deallocate(outz) 
 
   deallocate(outT)
-  deallocate(outP)
+  deallocate(outP) 
   deallocate(outrho)
+  deallocate(outz)
+  deallocate(taugrid)
+  deallocate(tempa)
+  
 
 
  end subroutine close_tarrays
