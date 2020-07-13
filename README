@@ -1,0 +1,4 @@
+- careful No overall Makefile!
+- first netcdf needs to be compiled, in that folder the path to netcdf library needs to be set
+- then src needs to be compiled, there are paths to fits libraries netcdf libraries. 
+
