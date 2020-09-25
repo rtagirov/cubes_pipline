@@ -140,7 +140,7 @@
    if (mpiread) then 
     !    Temperature  
     Nt = nx*ny*nz
-
+#ifdef MPIF
     call init_comm
 
     call read_cube_mpi(filename1, Nt, nx, ny, nz, T)
@@ -148,6 +148,8 @@
     call read_cube_mpi(filename3, Nt, nx, ny, nz, rho)
 
     call fin_comm
+#endif 
+
 !   --- if binary read call binary_read
    else if (binread) then 
 
@@ -405,7 +407,7 @@
        call str(int(mu*10), numberx)
 ! since the cube is rotated, the dz is changed, write out a new Headerfile:
        filename='Header_mu_'//trim(numberx)//'.'//trim(filenumber)
-       open (unit = 1, file= filename, form='formatted',status ='new')
+       open (unit = 1, file= filename, form='formatted')
        write (1,*) ' tau-grid points, start lgtau, step, finish lgtau,  Nx, Ny, dx,  dy' 
        write(1,*) Ngrid, tau1lg, step , tau2lg, Nx, Ny, dx, dy 
        close(unit=1)
@@ -455,7 +457,7 @@
        call str(int(mu*10), numberx)
 ! since the cube is rotated, the dz is changed, write out a new Headerfile:
        filename='Header_mu_'//trim(numberx)//'.'//trim(filenumber)
-       open (unit = 1, file= filename, form='formatted',status ='new')
+       open (unit = 1, file= filename, form='formatted')
        dz = dz*mu
        write (1,*) Nzz, Nx, Ny, dz, dx, dy
        close(unit=1)

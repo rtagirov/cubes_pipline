@@ -61,7 +61,7 @@ contains
     print*,'                                                   '
    if (ifmu) print*, ' the cubes will be rotated to the view angle = ', mu
    if (tau200) print*, ' the highest line opacity in the UV is calculated   '
-   if (interpol) print*, ' the obtained rays are interpolated on a coarse tau grid ' 
+   if (interpol .eq. 1) print*, ' the obtained rays are interpolated on a coarse tau grid ' 
  
 
 

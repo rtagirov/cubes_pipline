@@ -3,8 +3,9 @@
    use arrays
 
    implicit none
+#ifdef MPIF
    include 'mpif.h'
-
+#endif
    integer comm, ierror
 
   CONTAINS 
@@ -22,14 +23,18 @@
 
 !---------- New CUbes are written with MPI_write
 
-
+#ifdef MPIF
       call  MPI_File_open(comm,trim(filename),MPI_MODE_RDONLY,MPI_INFO_NULL,mfh, ierror)
 
       call MPI_File_read_all(mfh, buffarr,  Nt,  MPI_FLOAT, status, ierror)
 
       call  MPI_File_close(mfh, ierror)
 
+#else
+     print*, ' your are trying to read mpi-read without mpi, we will abort'
+     stop
 
+#endif
        Ni = 0
        do i = 1, Nx
          do j = 1, Ny
@@ -47,8 +52,10 @@
 
   subroutine fin_comm
    implicit none
-  
+
+#ifdef MPIF  
    call MPI_Finalize(ierror) 
+#endif 
 
   end subroutine fin_comm
 
@@ -57,8 +64,13 @@
   subroutine init_comm
    implicit none
 
+#ifdef MPIF
     call MPI_Init ( ierror )
     comm = MPI_COMM_WORLD   
+#else
+    print*, ' You are trying to initiat MPI, without MPIF flag, abort!' 
+    stop
+#endif 
 
   end subroutine init_comm
 !---------------------------------------------------------------------------------
