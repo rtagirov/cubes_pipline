@@ -11,73 +11,74 @@
    integer, intent(in) :: nx, ny, nz
 
    integer  Nzcut 
-   integer  i,j,jj,k, xn, xnp 
+   integer  i,j,jj,k, xn, xnp, x_l, z_l 
    real(kind=8), intent(in) :: mu, pivot, dx, dy, dz 
-   real(kind=8)  theta, pivotdx,  newdx
-    
+   real(kind=8)  theta, pivotdx,  newdx, newx, newz 
+   real(kind=8)   z_f,  x_f 
+   real(kind=8)   zold, znew, Tnewd 
 
-
-
+   zold = 0.0d0
+   znew = 0.0d0 
+  
    theta = acos(mu)
    pivotdx = tan(theta) * pivot
    newdx = dz * sin(theta)
-
-   Nzcut = Nz * int((1.0d0/mu))
+   Nzcut = min(int(Nz * (0.9d0/mu)), int(3.5*Nz))
 
 !   ---  allocate rotation arrays
-
-   call set_muarray(Nzcut)
+!   call set_muarray(Nzcut)
  
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
-       zgrid(1)=1.0d0
-
-        do k=2,Nzcut
-         zgrid(k)=zgrid(k-1)+DZ*mu
-
-        end do
+   zgrid(1)=0.0d0
+   do k=2,Nzcut
+      zgrid(k)=zgrid(k-1)+dz
+   end do
 
 ! if mu not equal 1 we need new z indices! 
 
-        do k =1,Nzcut
-          zf(k) = zgrid(k)/dz
-          zl(k) = int(zf(k))
-          zf(k) = zf(k) - dble(zl(k))
-!  this is for new x gird for Nx = 1, for any other Nx one has to add nx to x_low 
-
-          xf(k) = ((k-1)*newdx - pivotdx)/dx
-          xl(k) = int(xf(k))
-          xf(k) = abs( xf(k) - dble(xl(k)) )
-        end do
-
+ 
+   open(unit=1, file = 'rotated.dat')
+   write(1,*) Nzcut
+   write(1,*) Ny
 
 !---- start to do the whole cube 
-!--- over the x-y plane
+!--- over the x-y plan
+
+
       do i = 1, Nx
         do k = 1, Ny
-           do j = 1, Nzcut
-!             jj = (Nzcut -j +1)
+           do j = 1, Nzcut 
+             newx = (k-1)*dx - pivotdx +(j-1)*newdx 
+             newz = (j-1)*(dz)*mu;
+             if (newx .lt. 0.0) then 
+                 newx = newx+(Ny*dx)
+             elseif (newx .ge. (Ny*dx)) then 
+                 newx = newx - (floor(newx/(dble(Ny)*dx))*(Ny*dx))   
+             endif 
 
-             xn = xl(j)+(k-1)
+             x_f = newx/dx
+             x_l = int(x_f)
+             x_f = x_f-dble(x_l)
+             z_f = newz/dz
+             z_l = int(z_f)
+             z_f = z_f-dble(z_l)  
+             z_l = z_l +1
+             xn = x_l + 1
+             xnp = xn+1 
+             if (xnp .gt. Ny) xnp = mod(xnp, Ny)  
 
-             if (xn .lt. 1) then
-              xn = xn + Ny
-             else if (xn .gt. Ny) then
-              xn = mod(xn, Ny) 
-             end if
+             newT(i,k,j)  = ((T(i, xn, z_l)) * (1.0d0-x_f) + x_f*(T(i, xnp,  z_l))) *(1.0d0- z_f)
+             newT(i,k,j)  = newT(i,k,j) +  z_f*((T(i, xn, z_l+1))*(1.0d0-x_f)+ x_f*(T(i, xnp,z_l+1)))
 
-             xnp = xn+1
-             if(xnp .gt. Ny) xnp = mod(xnp, Ny)
-             
-          newT(i,k,j) = (T(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*T(i, xnp,  zl(j))) *(1.0d0+ zf(j))
-          newT(i,k,j) = newT(i,k,j) -  zf(j)*(T(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*T(i, xnp,zl(j)+1))
-!
-          newP(i,k,j) = (P(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*P(i, xnp,  zl(j))) *(1.0d0+ zf(j))
-          newP(i,k,j) = newP(i,k,j) -  zf(j)*(P(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*P(i, xnp,zl(j)+1))
-!
-          newrho(i,k,j) = (rho(i, xn, zl(j)) * (1.0d0-xf(j)) + xf(j)*rho(i, xnp,  zl(j))) *(1.0d0+ zf(j))
-          newrho(i,k,j) = newrho(i,k,j) -  zf(j)*(rho(i, xn, zl(j)+1)*(1.0d0-xf(j))+ xf(j)*rho(i, xnp,zl(j)+1))
-!
+             newP(i,k,j)  = ((P(i, xn, z_l)) * (1.0d0-x_f) + x_f*(P(i, xnp,  z_l))) *(1.0d0- z_f)
+             newP(i,k,j)  = newP(i,k,j) +  z_f*((P(i, xn, z_l+1))*(1.0d0-x_f)+ x_f*(P(i, xnp,z_l+1)))
+
+
+             newrho(i,k,j)  = ((rho(i, xn, z_l)) * (1.0d0-x_f) + x_f*(rho(i, xnp,  z_l))) *(1.0d0- z_f)
+             newrho(i,k,j)  = newrho(i,k,j) +  z_f*((rho(i, xn, z_l+1))*(1.0d0-x_f)+ x_f*(rho(i, xnp,z_l+1)))
+
+            znew = zold + dz*(j-1)*1.0d-5 
+            write(1,*) znew, newT(i,k,j), newP(i,k,j), newrho(i,k,j) 
 
            end do
          end do 

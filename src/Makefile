@@ -8,14 +8,14 @@ OBJECTS=arrays.o io_cubes.o  initcalc.o rotate.o
 all: main 
 
 main:    $(OBJECTS)  
-	 $(FC)  -o test main.F90  $(OBJECTS) $(INCLUDE) $(FITSLIB) $(NETCDFLIB)   
+	 $(FC) $(FPPFLAGS)  -o test main.F90  $(OBJECTS) $(INCLUDE) $(FITSLIB) $(NETCDFLIB)   
 	mv test ../bin 
 
 arrays.o : arrays.f90
-	$(FC) $(FFLAGS) arrays.f90 
+	$(FC) $(FFLAGS) $(FPPFLAGS) arrays.f90 
 
 io_cubes.o : io_cubes.F90
-	$(FC) $(FFLAGS) io_cubes.F90 $(INCLUDE) $(FITSLIB) 
+	$(FC) $(FFLAGS) $(FPPFLAGS) io_cubes.F90 $(INCLUDE) $(FITSLIB) 
 
 rotate.o : rotate.f90
 	$(FC) $(FFLAGS) rotate.f90

@@ -33,7 +33,7 @@
   integer indum
   real(kind=8) meanzt, onepoint 
   real(kind=8) mu, theta, pivot, pivotdx,  newdx
-  real(kind=8) summean 
+  real(kind=8) summean, pivot_in 
 
 ! --- for setting up tau grid on which to  map :
   integer Ngrid 
@@ -61,7 +61,7 @@
 !      initialize
 ! ---- read control file and set all logicals ------------------
  
-    call init_calc(mu, tau1lg, step, tau2lg)
+    call init_calc(mu, tau1lg, step, tau2lg, pivot_in)
     if (gettaug) then 
      Ngrid  = int((tau2lg - tau1lg)/step) +1 
      if (Ngrid .gt. Ngridmax) then 
@@ -81,7 +81,7 @@
     print*, ' Nx, Ny, Nz', Nx, Ny, Nz
     close(unit=1)
 
-  else
+  elseif (fitsread) then 
 
     print*, ' file name for dimensions nx, ny, nz and dz, dx, dy'
     read(*,*) filename
@@ -89,6 +89,15 @@
     read(2,*) Nz, Nx, Ny, dz, dx, dy
     close(unit=2) 
 
+  else 
+    filename=trim(folder)//trim(filenumber) 
+    open(unit=1, file =filename, form='formatted', status='old') 
+    read(1,*) Ny
+    read(1,*) Nz
+    Nx = 1 
+    read(1,*) dy
+    read(1,*) dz   
+    dx = dy 
   endif 
 
 
@@ -96,10 +105,10 @@
 !---- for tau - integration we do not need the whole depth of the cube
 !--- set depth of temporary arrays
    if (ifmu ) then  
-     Nzcut = Nz * int((1.0d0/mu))
+     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz) )
    else
      mu = 1.0
-     Nzcut = int(Nz/2)
+     Nzcut = Nz ! int(Nz/2)
    endif 
 
 !----------------------------------------------------------------------------
@@ -112,22 +121,22 @@
     open(unit =2, file='kappa_table.dat', form='formatted', status='old')
   endif 
 
-    read(2,*) numt, numpres
+  read(2,*) numt, numpres
 
 !----- allocate  arrays
 
-    call set_arrays(Nx, Ny, Nz, Nzcut, numt, numpres)
-    if (gettaug) call set_tarrays(Nx, Ny, Ngrid)
+  call set_arrays(Nx, Ny, Nz, Nzcut, numt, numpres)
+  if (gettaug) call set_tarrays(Nx, Ny, Ngrid)
 
 !---- read in the kappa table 1 :
 
-    read(2,*) (tabt(i), i = 1 , numt)
-    read(2,*) (tabp(i), i = 1, numpres)
-    do i = 1, numt
-       read(2,*) (kappatab(i,j), j = 1, numpres )
-    end do
+  read(2,*) (tabt(i), i = 1 , numt)
+  read(2,*) (tabp(i), i = 1, numpres)
+  do i = 1, numt
+     read(2,*) (kappatab(i,j), j = 1, numpres )
+  end do
 
-    close(unit=2)
+  close(unit=2)
 
 !--------------------------------------------------------------------------
 !------     READ in the CUBE ----------------------------------------------
@@ -165,20 +174,61 @@
      call read_cube_fits(filename2, nx, ny, nz, P)
 #endif 
 
-   else 
+   else if(sliceread) then  
+    
+     do i = 1, Ny
+       do j = 1, Nz
+        read(1,*) zgrid(j), T(1,i, j), P(1, i, j), rho(1,i,j)         
+       end do 
+     end do 
+     close(1)
 
-    print*,' ERROR, it is not specified in which format to read the cubes' 
-    stop
+     do j = 1, Nz
+       zgrid(j) = zgrid(j)*1.0d5 
+     end do 
+     dz = zgrid(2) - zgrid(1)
+
+
+   else 
+      print*,' ERROR, it is not specified in which format to read the cubes' 
+      stop
 
    endif 
 
+  
+!----- check the orientation of the  vertical dimension of the cube!
+ 
+   if (T(1,1,1) .gt. T(1,1,nz)) then 
+     print*, ' Cube was upside-down we flip it!' 
+     ! cubes are point upwards! 
+     call swap_cube(T, nx, ny, nz, 3, temparr)
+     T = temparr 
+     temparr = 0.0 
+
+     call swap_cube(P, nx, ny, nz, 3, temparr)
+     P = temparr 
+     temparr = 0.0
+
+     call swap_cube(rho, nx, ny, nz, 3, temparr)
+     rho = temparr 
+     temparr = 0.0
+       
+   endif 
+ 
+!  flipped  the array such that the vertical direction is pointing downwards! 
+
+
+!  ----------------------------------------------------------------------
+
 ! z-grid needs to be set for the cube as it is read in:
 
-   zgrid(1)=1.0d0
+   if (zgrid(nz-2) .lt. 1.0) then 
+     zgrid(1)=1.0d0
 
-   do k=2,Nzcut
-     zgrid(k)=zgrid(k-1)+dz
-   end do
+     do k=2,Nzcut
+       zgrid(k)=(k-1)*dz +1.0 
+     end do
+   endif 
 
 
 !----- if the cube needs to be rotated, we need the pivot point
@@ -203,9 +253,9 @@
         do k = 1, Ny
             do j = 1, Nzcut
 
-             tempt(j) = T(i,k, Nz-j+1)
-             tempp(j) = P(i,k, Nz-j+1)
-             tempr(j) = rho(i,k, Nz-j+1)
+             tempt(j) = T(i,k,j)
+             tempp(j) = P(i,k,j)
+             tempr(j) = rho(i,k,j)
 !    get kappa* rho
              kappa(j) = introssk(tempt(j), tempp(j))
              kappa(j) = kappa(j)* tempr(j)
@@ -218,23 +268,24 @@
          tau(i, k, 1:Nzcut) = taut(1:Nzcut)
          indum = map1(taut, zgrid, Nzcut, onepoint, meanzt, 1 ) 
          summean = summean + meanzt
+         write(71,*) meanzt 
         end do 
       end do 
 
      summean = summean/(Nx*Ny)
-     print*, ' Pivot = ', summean 
+     print*, ' calculated Pivot = ', summean 
   
 !-------------------------------------------------------------------------!
 !    --------   DO the ROTATION ------------------------------------------!
 
    if (ifmu) then 
-
-     Nzcut = Nz * int((1.0d0/mu)) 
-     pivot = summean 
+     pivot = summean
+     if (pivot_in .gt. 0.0d0) pivot = pivot_in
+     print*, ' The pivot used for calc = ', pivot 
      call rotate_cube(mu, pivot, nx, ny, nz, dx, dy, dz)  
 !---- after rotation was performed, the arrays are stored in newT, newP, newrho!
 ! okey so now we actually have Nzcut points in the vertical direction
-       Nzcut = Nz * int((1.0d0/mu))
+     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz)) 
 !
      print*,  ' Finished rotation' 
 
@@ -278,9 +329,9 @@
         do k = 1, Ny
             do j = 1, Nzcut
 
-             tempt(j) = newT(i,k, Nzcut-j+1)
-             tempp(j) = newP(i,k, Nzcut-j+1)
-             tempr(j) = newrho(i,k, Nzcut-j+1)
+             tempt(j) = newT(i,k, j)
+             tempp(j) = newP(i,k, j)
+             tempr(j) = newrho(i,k, j)
 !    get kappa* rho
              kappa(j) = introssk(tempt(j), tempp(j))
              kappa(j) = kappa(j)* tempr(j)
@@ -325,9 +376,9 @@
         do k = 1, Ny
             do j = 1, Nzcut
 
-             tempt(j) = newT(i,k, Nzcut-j+1)
-             tempp(j) = newP(i,k, Nzcut-j+1)
-             tempr(j) = newrho(i,k, Nzcut-j+1)
+             tempt(j) = newT(i,k, j)
+             tempp(j) = newP(i,k, j)
+             tempr(j) = newrho(i,k, j)
 !    get kappa* rho
              kappa(j) = introssk(tempt(j), tempp(j))
              kappa(j) = kappa(j)* tempr(j)
@@ -347,11 +398,13 @@
          outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
 
          indum = map1(taut, zgrid, Nzcut, taugrid, tempa, Ngrid)
+         outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+
 ! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
-         maxz = maxval(tempa)
-         do  j = 1, Ngrid  
-           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
-         end do  
+!         maxz = maxval(tempa)
+!         do  j = 1, Ngrid  
+!           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
+!         end do  
           
 
         end do
@@ -363,9 +416,9 @@
           do k = 1, Ny
             do j = 1, Nzcut
 
-             tempt(j) = T(i,k, Nzcut-j+1)
-             tempp(j) = P(i,k, Nzcut-j+1)
-             tempr(j) = rho(i,k, Nzcut-j+1)
+             tempt(j) = T(i,k, j)
+             tempp(j) = P(i,k, j)
+             tempr(j) = rho(i,k,j)
              taut(j) =  tau(i,k, j)
             end do 
 
@@ -380,10 +433,14 @@
 
             indum = map1(taut, zgrid, Nzcut, taugrid, tempa, Ngrid)
 ! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
-            maxz = maxval(tempa)
-            do  j = 1, Ngrid 
-              outz(i,k,j) = real( abs(tempa(j) - maxz), 4)
-            end do
+         outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
+!         maxz = maxval(tempa)
+!         do  j = 1, Ngrid  
+!           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
+!         end do  
+
 
           end do  
        end do 
@@ -412,7 +469,16 @@
        write(1,*) Ngrid, tau1lg, step , tau2lg, Nx, Ny, dx, dy 
        close(unit=1)
 
+       open (unit =1, file ='structure.dat')
 
+       do k = 1, Nx 
+        do j = 1, Ny
+         do i = 1, nzz
+           write(1,*) outz(k,j,i),  outT(k,j, i ), outP(k,j, i), outrho(k,j,i)
+         end do 
+        end do 
+       end do
+       close (unit=1) 
 !      Temperature 
        filename='T_onTau.'//trim(filenumber)//'.nc'
         call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
@@ -451,7 +517,7 @@
           call close_netcdf(ncid, ier)
         endif 
 
-
+       
 
 !---- need to get mu as a number for the file name:
        call str(int(mu*10), numberx)
@@ -486,7 +552,7 @@
 
      print*, ' all done, tidying up!' 
 !------ tidy up ! ---------- never leave a mess ;) ---------------------!
-       if(ifmu) call close_muarrays
+!       if(ifmu) call close_muarrays
        if(gettaug) call close_tarrays
        call close_arrays 
 
@@ -508,6 +574,39 @@
       s = trim(s)
    end subroutine
 
+
+   subroutine swap_cube(arr, n1, n2, n3, dimn,  outa)
+
+     implicit none
+     integer, intent(in):: n1, n2, n3, dimn
+     integer :: i,j, k 
+     real(kind=4), intent(in) :: arr(n1, n2, n3) 
+     real(kind=4), intent(out):: outa(n1, n2, n3) 
+    
+     if (dimn .eq. 1) then 
+
+       do i = 1, n1
+         outa(i, 1:n2, 1:n3) = arr(n1-(i-1), 1:n2, 1:n3)
+       end do
+
+     elseif (dimn .eq. 2) then 
+       do i = 1, n2
+         outa(1:n1, i , 1:n3) = arr(1:n1, n2-(i-1), 1:n3)
+       end do
+
+     elseif (dimn .eq. 3) then 
+  
+       do i = 1, n3
+         outa(1:n1, 1:n2, i) = arr(1:n1, 1:n2, n3 -(i-1))
+       end do 
+  
+     endif 
+
+    return 
+
+
+
+   end subroutine
 
 
 

@@ -1,10 +1,10 @@
-FC=ifort 
-#FC= mpif90    
+#FC=ifort 
+FC= mpif90    
 PROG=testcube
 
 #ifort preprocessor flags
-FPPFLAGS = #"-DMPIF" 
-FFLAGS = "-c"# -traceback  -heap-arrays -check bounds" 
+FPPFLAGS = "-DMPIF" 
+FFLAGS = "-c -traceback  -heap-arrays -check bounds" 
 #  -stand f90  -assume realloc_lhs  -check all  -traceback   -fstack-protector  -assume protect_parens"  #-O2 
 
 

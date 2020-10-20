@@ -9,7 +9,7 @@ Module arrays
 
 
  real(kind=4), allocatable :: buffarr(:), bufffits(:,:,:)
- real(kind=4), allocatable::  tau(:, :,:), T(:, :,: ), P(:,:,:), rho(:,:,:)
+ real(kind=4), allocatable::  temparr(:,:,:),  tau(:, :,:), T(:, :,: ), P(:,:,:), rho(:,:,:)
 
 !--- 
  real(kind=4), allocatable:: newT(:,:,:), newP(:,:,:),newrho(:,:,:)
@@ -50,6 +50,8 @@ Module arrays
  allocate(bufffits(nx, nz, ny))
  allocate(T(nx, ny, nz))
  allocate(tau(nx, ny, nycut))
+
+ allocate(temparr(nx, ny, nz))
  
  allocate(P(nx, ny, nz))
  allocate(rho(nx, ny, nz))
@@ -128,6 +130,8 @@ Module arrays
   deallocate(bufffits)
   deallocate(T)
   deallocate(tau)
+
+  deallocate(temparr)
  
   deallocate(rho)
   deallocate(P)
