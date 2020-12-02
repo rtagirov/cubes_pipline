@@ -17,7 +17,7 @@
 ! --- for writting nc files
   integer ier, ncid 
 ! --- loop integers
-  integer i,j,k,m
+  integer i,j,k,m, ti 
 
  
 !--- reading cube:
@@ -36,9 +36,9 @@
   real(kind=8) summean, pivot_in 
 
 ! --- for setting up tau grid on which to  map :
-  integer Ngrid 
+  integer Ngrid, ccount, tNgrid  
   integer Ngridmax 
-  parameter( Ngridmax = 82)
+  parameter( Ngridmax = 128)
    
   real(kind=8) maxz, tau1lg, step, tau2lg
  
@@ -63,7 +63,7 @@
  
     call init_calc(mu, tau1lg, step, tau2lg, pivot_in)
     if (gettaug) then 
-     Ngrid  = int((tau2lg - tau1lg)/step) +1 
+     Ngrid  = int((tau2lg - tau1lg)/step) +11   ! add 10 additional points for the top!  
      if (Ngrid .gt. Ngridmax) then 
         print*,' Tau grid configuration results in too many points; Ngrid =', Ngrid 
         print*, ' Application will be aborted ' 
@@ -265,7 +265,7 @@
          call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
 !--- note that the cube has its top at Nz, and we integrated from top inwards, 
 ! --- but for convenience we store the tau array having its top at 1
-         tau(i, k, 1:Nzcut) = taut(1:Nzcut)
+         taur(i, k, 1:Nzcut) = taut(1:Nzcut)
          indum = map1(taut, zgrid, Nzcut, onepoint, meanzt, 1 ) 
          summean = summean + meanzt
          write(71,*) meanzt 
@@ -289,7 +289,9 @@
 !
      print*,  ' Finished rotation' 
 
+!----- this is if the cube is beeing only rotated, but not interpolated on tau- grid 
      if(tau200) then 
+ 
        print*, ' Read kappa table for tau - 200 calculation after rotation '
 !---- get the other kappa table: 
        open(unit =2, file='kappa_table.dat', form='formatted', status='old')
@@ -307,10 +309,10 @@
          allocate(kappatab(numt2, nump2))
          allocate(tabt(numt2))
          allocate(tabp(nump2))
-         numt = numt2
-         numpres = nump2
+       endif 
+       numt = numt2
+       numpres = nump2
 
-       endif  
 
 
  
@@ -357,20 +359,54 @@
 !--- Note that gettau and tau200 should not be used together!!!! 
 
    if (gettaug)  then 
-
+   
    print*, ' Start to set up tau-grid onto which to interpolate' 
      
 !   --- get up taugrid 
-    do i = 1, ngrid
+    do i = 1, ngrid -10 
      taugrid(i) = tau1lg+(i-1)*step
      taugrid(i) = 10**(taugrid(i)) 
     end do 
+    do i = ngrid-9, ngrid 
+     taugrid(i) = taugrid(i-1) + 0.01
+    enddo 
+ 
 
 !--- since after rotation our arrays are called differently, and I did not come up 
 !  --- with an easier solution there are two possibilities: 
 
 !   1) ----:
      if (ifmu) then 
+  
+       ! if we are here than the cube was rotated, and the tau array was calculated using the tau200, now we need to also calculate the 
+       ! new tau ross on the rotated cube, first read kappa table
+        open(unit = 2, file='ross_table.dat', form='formatted', status='old')
+        read(2,*) numt2, nump2
+ ! ---- make sure that the numt, numpress in this table are <= than in the tau table because 
+!      of allocation, IN CASE THIS IS NOT TURE: 
+!      - deallocate kappatab, tabt, tabp, 
+!      - allocate with new dimensions, and read in !
+       if ((numt2 .gt. numt) .or. (nump2 .gt. numpres)) then
+         deallocate(tabt)
+         deallocate(tabp)
+         deallocate(kappatab)
+
+         allocate(kappatab(numt2, nump2))
+         allocate(tabt(numt2))
+         allocate(tabp(nump2))
+       endif 
+       numt = numt2
+       numpres = nump2
+
+       read(2,*) (tabt(i), i = 1 , numt)
+       read(2,*) (tabp(i), i = 1, numpres)
+       do i = 1, numt
+          read(2,*) (kappatab(i,j), j = 1, numpres )
+       end do
+
+       close(unit=2)
+
+ 
       print*, ' get temporary arrays, get tau Rosseland and interpolate'  
       do i = 1, Nx
         do k = 1, Ny
@@ -388,30 +424,95 @@
 ! inegrate to get tau
          call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
 !    
-         indum = map1(taut, tempt, Nzcut, taugrid, tempa, Ngrid)
-         outT(i,k,1:Ngrid) = tempa(1:Ngrid)
+         taur(i, k, 1:Nzcut) = taut(1:Nzcut)
+         tempa = 0.0d0 
 
-         indum = map1(taut, tempp, Nzcut, taugrid, tempa, Ngrid)
-         outP(i,k,1:Ngrid) = tempa(1:Ngrid)
+!    before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
+         if (taut(3) .lt. taugrid(1)) then 
+          !  here the top has smaller tau ross than top of the grid, need to find out how many points and make an
+          !  additional chunk of the tau grid.
+           ccount = 4
+            do while (taut(ccount) .lt. taugrid(1) ) 
+              ccount = ccount +1
+            end do  
+          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.25
+ 
+          if (tau(i,k,ccount ) .gt. 0.25 ) then  
+           if (ccount .le. 10 ) then 
+             ttaugrid(1:ccount-1) =  taut(1:ccount-1)
+             ttaugrid(ccount:Ngrid) = taugrid(1:Ngrid-ccount+1) 
 
-         indum = map1(taut, tempr, Nzcut, taugrid, tempa, Ngrid)
-         outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
+           else 
+             step = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
+             do ti = 1,  9 
+               ttaugrid(ti) = 10.0**(tau1lg-(10-ti)*step )  
+             end do 
+             ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
+           endif 
+          else  
+           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+          endif 
 
-         indum = map1(taut, zgrid, Nzcut, taugrid, tempa, Ngrid)
-         outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+         else
+           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
 
-! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
-!         maxz = maxval(tempa)
-!         do  j = 1, Ngrid  
-!           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
-!         end do  
-          
+         end if 
+
+
+!        now  interpolate
+ 
+           indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
+           outT(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
+           outP(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
+           outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
+           outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+  
+
 
         end do
       end do
 
-!   2) -----: note if there was no rotation then, tau holds already the rosseland tau, so it does not need to be re-calculated. 
-     else
+!   2) -----: note if there was no rotation then, taur holds already the rosseland tau, so only tau 200 needs to be calculated. 
+     else   
+
+       print*, ' Read kappa table for tau - 200 calculation without rotation '
+!---- get the other kappa table: 
+       open(unit =2, file='kappa_table.dat', form='formatted', status='old')
+       read(2,*) numt2, nump2
+
+! ---- make sure that the numt, numpress in this table are <= than in the tau table because 
+!      of allocation, IN CASE THIS IS NOT TURE: 
+!      - deallocate kappatab, tabt, tabp, 
+!      - allocate with new dimensions, and read in !
+       if ((numt2 .gt. numt) .or. (nump2 .gt. numpres)) then
+         deallocate(tabt)
+         deallocate(tabp)
+         deallocate(kappatab)
+
+         allocate(kappatab(numt2, nump2))
+         allocate(tabt(numt2))
+         allocate(tabp(nump2))
+       endif 
+       numt = numt2
+       numpres = nump2
+
+       read(2,*) (tabt(i), i = 1 , numt)
+       read(2,*) (tabp(i), i = 1, numpres)
+       do i = 1, numt
+          read(2,*) (kappatab(i,j), j = 1, numpres )
+       end do
+
+       close(unit=2)
+
+!-----  finished reading it. 
+
+
        do i = 1, Nx
           do k = 1, Ny
             do j = 1, Nzcut
@@ -419,28 +520,65 @@
              tempt(j) = T(i,k, j)
              tempp(j) = P(i,k, j)
              tempr(j) = rho(i,k,j)
-             taut(j) =  tau(i,k, j)
+!    get kappa* rho
+             kappa(j) = introssk(tempt(j), tempp(j))
+             kappa(j) = kappa(j)* tempr(j)
+
+            end do
+
+! inegrate to get tau
+         call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
+!    
+         tau(i, k, 1:Nzcut) = taut(1:Nzcut)
+         taut(1:Nzcut) = taur(i,k,1:Nzcut)
+
+         tempa = 0.0d0
+
+!    before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
+         if (taut(3) .lt. taugrid(1)) then
+          !  here the top has smaller tau ross than top of the grid, need to find out how many points and make an
+          !  additional chunk of the tau grid.
+           ccount = 4
+            do while (taut(ccount) .lt. taugrid(1) ) 
+              ccount = ccount +1
             end do 
 
-            indum = map1(taut, tempt, Nzcut, taugrid, tempa, Ngrid)
-            outT(i,k,1:Ngrid) = tempa(1:Ngrid)
- 
-            indum = map1(taut, tempp, Nzcut, taugrid, tempa, Ngrid)
-            outP(i,k,1:Ngrid) = tempa(1:Ngrid)
+          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.25
 
-            indum = map1(taut, tempr, Nzcut, taugrid, tempa, Ngrid)
-            outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
+          if (tau(i,k,ccount ) .gt. 0.25 ) then
+           if (ccount .le. 10 ) then
+             ttaugrid(1:ccount-1) =  taut(1:ccount-1)
+             ttaugrid(ccount:Ngrid) = taugrid(1:Ngrid-ccount+1)
 
-            indum = map1(taut, zgrid, Nzcut, taugrid, tempa, Ngrid)
-! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
-         outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+           else
+             step = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0 
+             do ti = 1,  9
+               ttaugrid(ti) = 10.0**(tau1lg-(10-ti)*step )
+             end do
+             ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
+           endif
+          else
+           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+          endif
 
-! note z starts from top pointing inwards, Rinat needs z pointinh outwards! 
-!         maxz = maxval(tempa)
-!         do  j = 1, Ngrid  
-!           outz(i,k,j) = real(abs(tempa(j) - maxz), 4)
-!         end do  
+         else
+           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
 
+         end if
+
+
+!        now  interpolate
+          indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
+           outT(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
+           outP(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
+           outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
+
+           indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
+           outz(i,k,1:Ngrid) = tempa(1:Ngrid)
 
           end do  
        end do 
@@ -449,6 +587,8 @@
 
 
    endif 
+
+!-------------------------------------------------------------------------!
 
 !-------------------------------------------------------------------------!
 ! ---             Finally , PRINT OUT the results ------------------------!
@@ -469,16 +609,22 @@
        write(1,*) Ngrid, tau1lg, step , tau2lg, Nx, Ny, dx, dy 
        close(unit=1)
 
-       open (unit =1, file ='structure.dat')
 
-       do k = 1, Nx 
-        do j = 1, Ny
-         do i = 1, nzz
-           write(1,*) outz(k,j,i),  outT(k,j, i ), outP(k,j, i), outrho(k,j,i)
-         end do 
-        end do 
-       end do
-       close (unit=1) 
+!----- this was for debugging
+
+!       open (unit =1, file ='structure.dat')
+
+!       do k = 1, Nx 
+!        do j = 1, Ny
+!         do i = 1, nzz
+!           write(1,*) outz(k,j,i),  outT(k,j, i ), outP(k,j, i), outrho(k,j,i)
+!         end do 
+!        end do 
+!       end do
+!       close (unit=1) 
+! --- end for debugging 
+
+
 !      Temperature 
        filename='T_onTau.'//trim(filenumber)//'.nc'
         call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
@@ -807,6 +953,7 @@
  end function 
 
 
+!
 !--------------------------- Map function -----------------------------------
 
  integer function map1 (xold, fold, nold, xnew, fnew, nnew)

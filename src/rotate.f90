@@ -37,9 +37,6 @@
 ! if mu not equal 1 we need new z indices! 
 
  
-   open(unit=1, file = 'rotated.dat')
-   write(1,*) Nzcut
-   write(1,*) Ny
 
 !---- start to do the whole cube 
 !--- over the x-y plan
@@ -78,7 +75,6 @@
              newrho(i,k,j)  = newrho(i,k,j) +  z_f*((rho(i, xn, z_l+1))*(1.0d0-x_f)+ x_f*(rho(i, xnp,z_l+1)))
 
             znew = zold + dz*(j-1)*1.0d-5 
-            write(1,*) znew, newT(i,k,j), newP(i,k,j), newrho(i,k,j) 
 
            end do
          end do 

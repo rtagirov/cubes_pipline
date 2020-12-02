@@ -44,7 +44,7 @@ contains
   if (rot .eq. 1) ifmu = .true.
   if (tau .eq. 1) tau200 = .true. 
   if (interpol .eq. 1)  gettaug = .true. 
-
+  if (gettaug) tau200 = .true. 
 ! ----------------------------------------
 
     

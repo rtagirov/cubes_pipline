@@ -9,7 +9,7 @@ Module arrays
 
 
  real(kind=4), allocatable :: buffarr(:), bufffits(:,:,:)
- real(kind=4), allocatable::  temparr(:,:,:),  tau(:, :,:), T(:, :,: ), P(:,:,:), rho(:,:,:)
+ real(kind=4), allocatable::  temparr(:,:,:), taur(:,:,:),  tau(:, :,:), T(:, :,: ), P(:,:,:), rho(:,:,:)
 
 !--- 
  real(kind=4), allocatable:: newT(:,:,:), newP(:,:,:),newrho(:,:,:)
@@ -29,7 +29,7 @@ Module arrays
 
 ! for taugrid mapping 
  real(kind=4), allocatable :: outT(:,:,:), outP(:,:,:), outrho(:,:,:), outz(:,:,:)
- real(kind=8), allocatable :: taugrid(:), tempa(:) 
+ real(kind=8), allocatable ::  ttaugrid(:),taugrid(:), tempa(:) 
 
 ! --- these are coefficients that are calculated in paracoe, but used in integ
  real(kind=8), allocatable :: a(:,:), b(:,:), c(:,:)
@@ -50,6 +50,8 @@ Module arrays
  allocate(bufffits(nx, nz, ny))
  allocate(T(nx, ny, nz))
  allocate(tau(nx, ny, nycut))
+ allocate(taur(nx, ny, nycut))
+
 
  allocate(temparr(nx, ny, nz))
  
@@ -61,6 +63,8 @@ Module arrays
  allocate(kappatab(nt, np)) 
  T = 0.0d0
  tau = 0.0d0
+ taur = 0.0d0 
+
  buffarr = 0.0
  bufffits = 0.0
 
@@ -112,6 +116,8 @@ Module arrays
    integer, intent(in):: nx, ny, nz
 
    allocate(taugrid(nz))
+   allocate(ttaugrid(nz))
+
    allocate(tempa(nz))
    allocate(outz(nx, ny, nz))
    allocate(outT(nx, ny, nz))
@@ -130,6 +136,8 @@ Module arrays
   deallocate(bufffits)
   deallocate(T)
   deallocate(tau)
+  deallocate(taur)
+
 
   deallocate(temparr)
  
@@ -176,6 +184,8 @@ Module arrays
   deallocate(outrho)
   deallocate(outz)
   deallocate(taugrid)
+  deallocate(ttaugrid)
+
   deallocate(tempa)
   
 
