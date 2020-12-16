@@ -1,16 +1,17 @@
-#FC=ifort 
-FC= mpif90    
-PROG=testcube
+FC=ifort 
+#FC= mpif90    
+PROG=cpline.exe
 
 #ifort preprocessor flags
-FPPFLAGS = "-DMPIF" 
-FFLAGS = "-c -traceback  -heap-arrays -check bounds" 
+FPPFLAGS = #"-DMPIF" 
+FFLAGS = "-c"# -traceback  -heap-arrays -check bounds" 
 #  -stand f90  -assume realloc_lhs  -check all  -traceback   -fstack-protector  -assume protect_parens"  #-O2 
 
-
 # NETCDF library routines
-INCLUDE="-I/scratch/witzke/Libraries/netcdf-3.6.1/include"
-NETCDFLIB="-L../netcdf -lnet -L/scratch/witzke/Libraries/netcdf-3.6.1/lib -lnetcdf" 
+#INCLUDE="-I/scratch/witzke/Libraries/netcdf-3.6.1/include"
+#NETCDFLIB="-L../netcdf -lnet -L/scratch/witzke/Libraries/netcdf-3.6.1/lib -lnetcdf"
+INCLUDE="-I/home/rtagirov/lib/include"
+NETCDFLIB="-L../netcdf -lnet -L/home/rtagirov/lib/lib -lnetcdf"
 
 ####################################################################
 

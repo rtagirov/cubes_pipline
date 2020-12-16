@@ -32,8 +32,8 @@ contains
     read(2,*) mu
     read(2,*) tau  
     read(2,*) interpol
-    read(2,*) tau1lg, step, tau2lg 
     read(2,*) pivot_in
+    read(2,*) tau1lg, step, tau2lg 
    close(unit=2) 
 !------------------------------
   if (iread .eq. 1) binread =.true.

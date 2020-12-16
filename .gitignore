@@ -6,3 +6,4 @@
 bin/*
 *.swp
 *.tar.gz
+src/*.exe

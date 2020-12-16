@@ -8,8 +8,8 @@ OBJECTS=arrays.o io_cubes.o  initcalc.o rotate.o
 all: main 
 
 main:    $(OBJECTS)  
-	 $(FC) $(FPPFLAGS)  -o test main.F90  $(OBJECTS) $(INCLUDE) $(FITSLIB) $(NETCDFLIB)   
-	mv test ../bin 
+	 $(FC) $(FPPFLAGS)  -o cpline.exe main.F90  $(OBJECTS) $(INCLUDE) $(FITSLIB) $(NETCDFLIB)   
+#	mv test ../bin 
 
 arrays.o : arrays.f90
 	$(FC) $(FFLAGS) $(FPPFLAGS) arrays.f90 

@@ -88,7 +88,7 @@
    integer i, j, k
 
  
-   open (unit = 1, file= filename, form='unformatted',status ='old')
+   open (unit = 1, file= filename, form='unformatted',status ='old', access = 'stream')
        do i = 1, Nx
          do j = 1, Ny
            do k = 1, Nz

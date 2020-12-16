@@ -29,7 +29,9 @@ Module arrays
 
 ! for taugrid mapping 
  real(kind=4), allocatable :: outT(:,:,:), outP(:,:,:), outrho(:,:,:), outz(:,:,:)
- real(kind=8), allocatable ::  ttaugrid(:),taugrid(:), tempa(:) 
+! real(kind=8), allocatable ::  ttaugrid(:),taugrid(:), tempa(:) 
+ real(kind=8), allocatable ::  ttaugrid(:, :, :),taugrid(:), tempa(:) 
+ real(kind=4), allocatable ::  ttaugrid_sp(:, :, :)
 
 ! --- these are coefficients that are calculated in paracoe, but used in integ
  real(kind=8), allocatable :: a(:,:), b(:,:), c(:,:)
@@ -116,7 +118,9 @@ Module arrays
    integer, intent(in):: nx, ny, nz
 
    allocate(taugrid(nz))
-   allocate(ttaugrid(nz))
+!   allocate(ttaugrid(nz))
+   allocate(ttaugrid(nx, ny, nz))
+   allocate(ttaugrid_sp(nx, ny, nz))
 
    allocate(tempa(nz))
    allocate(outz(nx, ny, nz))
@@ -185,6 +189,7 @@ Module arrays
   deallocate(outz)
   deallocate(taugrid)
   deallocate(ttaugrid)
+  deallocate(ttaugrid_sp)
 
   deallocate(tempa)
   

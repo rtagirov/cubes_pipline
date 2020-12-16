@@ -36,7 +36,7 @@
   real(kind=8) summean, pivot_in 
 
 ! --- for setting up tau grid on which to  map :
-  integer Ngrid, ccount, tNgrid  
+  integer Ngrid, ccount, tNgrid, n_add
   integer Ngridmax 
   parameter( Ngridmax = 128)
    
@@ -47,13 +47,14 @@
   real(kind=8) introssk
   integer      map1
 
-
-
+  real(kind = 8) :: mean1, mean2, mean3, sigma1, sigma2, sigma3
+  real(kind = 8) :: maxim1, maxim2, maxim3
+  real(kind = 8) :: minim1, minim2, minim3
 
 !       filename='result_0.120000.fits'
 !       folder='/scratch/yeo/SATIRE3D/D000/snapshots/'
-    read(*,*) folder
-    read(*,*) filenumber
+!    read(*,*) folder
+!    read(*,*) filenumber
     sizee = 1
     myrank = 0  
 
@@ -63,42 +64,58 @@
  
     call init_calc(mu, tau1lg, step, tau2lg, pivot_in)
     if (gettaug) then 
-     Ngrid  = int((tau2lg - tau1lg)/step) +11   ! add 10 additional points for the top!  
-     if (Ngrid .gt. Ngridmax) then 
-        print*,' Tau grid configuration results in too many points; Ngrid =', Ngrid 
-        print*, ' Application will be aborted ' 
-        stop
-     endif
+     Ngrid  = (int((tau2lg - tau1lg)/step) + 1) + 10 ! add 10 additional points for the top!  
+!     if (Ngrid .gt. Ngridmax) then 
+!        print*,' Tau grid configuration results in too many points; Ngrid =', Ngrid 
+!        print*, ' Application will be aborted ' 
+!        stop
+!     endif
     endif 
+
+! get snapshot number
+
+    open(unit = 102, file='snapshot.inp', form='formatted', status='old')
+    read(102, *) filenumber
+    close(unit = 102) 
 
 ! get cube dimensions :
 
-  if (mpiread .or. binread) then 
-
-    filename=trim(folder)//'Header.'//trim(filenumber)
-    open (unit = 1, file= filename, form='formatted',status ='old')
-    read(1,*) Nz, Nx, Ny, dz, dx, dy
+    open (unit = 1, file= 'dims.inp', form='formatted',status ='old')
+    read(1,*) Nz
+    read(1,*) Nx
+    read(1,*) Ny
+    read(1,*) dz
+    read(1,*) dx
+    read(1,*) dy
     print*, ' Nx, Ny, Nz', Nx, Ny, Nz
     close(unit=1)
 
-  elseif (fitsread) then 
+!  if (mpiread .or. binread) then 
 
-    print*, ' file name for dimensions nx, ny, nz and dz, dx, dy'
-    read(*,*) filename
-    open(unit = 2, file=filename, form='formatted', status='old')
-    read(2,*) Nz, Nx, Ny, dz, dx, dy
-    close(unit=2) 
+!    filename=trim(folder)//'Header.'//trim(filenumber)
+!    open (unit = 1, file= filename, form='formatted',status ='old')
+!    read(1,*) Nz, Nx, Ny, dz, dx, dy
+!    print*, ' Nx, Ny, Nz', Nx, Ny, Nz
+!    close(unit=1)
 
-  else 
-    filename=trim(folder)//trim(filenumber) 
-    open(unit=1, file =filename, form='formatted', status='old') 
-    read(1,*) Ny
-    read(1,*) Nz
-    Nx = 1 
-    read(1,*) dy
-    read(1,*) dz   
-    dx = dy 
-  endif 
+!  elseif (fitsread) then 
+
+!    print*, ' file name for dimensions nx, ny, nz and dz, dx, dy'
+!    read(*,*) filename
+!    open(unit = 2, file=filename, form='formatted', status='old')
+!    read(2,*) Nz, Nx, Ny, dz, dx, dy
+!    close(unit=2) 
+
+!  else 
+!    filename=trim(folder)//trim(filenumber) 
+!    open(unit=1, file =filename, form='formatted', status='old') 
+!    read(1,*) Ny
+!    read(1,*) Nz
+!    Nx = 1 
+!    read(1,*) dy
+!    read(1,*) dz   
+!    dx = dy 
+!  endif 
 
 
 
@@ -142,9 +159,12 @@
 !------     READ in the CUBE ----------------------------------------------
 !--------------------------------------------------------------------------
 
-   filename1=trim(folder)//'eosT.'//trim(filenumber)
-   filename2=trim(folder)//'eosP.'//trim(filenumber)
-   filename3=trim(folder)//'result_prim_0.'//trim(filenumber)
+!   filename1=trim(folder)//'eosT.'//trim(filenumber)
+!   filename2=trim(folder)//'eosP.'//trim(filenumber)
+!   filename3=trim(folder)//'result_prim_0.'//trim(filenumber)
+   filename1='eosT.'//trim(filenumber)//'.bin'
+   filename2='eosP.'//trim(filenumber)//'.bin'
+   filename3='result_0.'//trim(filenumber)//'.bin'
 
    if (mpiread) then 
     !    Temperature  
@@ -268,13 +288,58 @@
          taur(i, k, 1:Nzcut) = taut(1:Nzcut)
          indum = map1(taut, zgrid, Nzcut, onepoint, meanzt, 1 ) 
          summean = summean + meanzt
-         write(71,*) meanzt 
+!         write(71,*) meanzt 
         end do 
       end do 
 
      summean = summean/(Nx*Ny)
      print*, ' calculated Pivot = ', summean 
   
+     mean1 = 0.0d0
+     mean2 = 0.0d0
+     mean3 = 0.0d0
+
+     do i = 1, Nx
+        do j = 1, Ny
+           mean1 = mean1 + taur(i, j, 2)
+           mean2 = mean2 + taur(i, j, 3)
+           mean3 = mean3 + taur(i, j, 4)
+        enddo
+     enddo
+
+     mean1 = mean1 / (Nx * Ny)
+     mean2 = mean2 / (Nx * Ny)
+     mean3 = mean3 / (Nx * Ny)
+
+     sigma1 = 0.0d0
+     sigma2 = 0.0d0
+     sigma3 = 0.0d0
+
+     do i = 1, Nx
+        do j = 1, Ny
+           sigma1 = sigma1 + (taur(i, j, 2) - mean1)**2.0d0
+           sigma2 = sigma2 + (taur(i, j, 3) - mean2)**2.0d0
+           sigma3 = sigma3 + (taur(i, j, 4) - mean3)**2.0d0
+        enddo
+     enddo
+
+     sigma1 = dsqrt(sigma1 / (Nx * Ny))
+     sigma2 = dsqrt(sigma2 / (Nx * Ny))
+     sigma3 = dsqrt(sigma3 / (Nx * Ny))
+
+     maxim1 = maxval(taur(:, :, 2))
+     maxim2 = maxval(taur(:, :, 3))
+     maxim3 = maxval(taur(:, :, 4))
+
+     minim1 = minval(taur(:, :, 2))
+     minim2 = minval(taur(:, :, 3))
+     minim3 = minval(taur(:, :, 4))
+
+     write(*, '(A,2x,3(es9.2,2x))') 'mean', mean1,  mean2,  mean3
+     write(*, '(A,2x,3(es9.2,2x))') 'sig',  sigma1, sigma2, sigma3
+     write(*, '(A,2x,3(es9.2,2x))') 'max',  maxim1, maxim2, maxim3
+     write(*, '(A,2x,3(es9.2,2x))') 'min',  minim1, minim2, minim3
+
 !-------------------------------------------------------------------------!
 !    --------   DO the ROTATION ------------------------------------------!
 
@@ -362,15 +427,33 @@
    
    print*, ' Start to set up tau-grid onto which to interpolate' 
      
+    open(unit = 1, file = 'tau.out')
+
 !   --- get up taugrid 
-    do i = 1, ngrid -10 
-     taugrid(i) = tau1lg+(i-1)*step
-     taugrid(i) = 10**(taugrid(i)) 
+
+!    do i = 1, 10
+!     taugrid(11 - i) = tau1lg - i * 0.08
+!    end do 
+
+!    do i = 11, ngrid
+!     taugrid(i) = tau1lg + (i - 11) * step
+!    end do
+
+    do i = 1, ngrid - 10
+     taugrid(i) = tau1lg + (i - 1) * step
     end do 
-    do i = ngrid-9, ngrid 
-     taugrid(i) = taugrid(i-1) + 0.01
+
+    do i = ngrid - 9, ngrid
+     taugrid(i) = taugrid(i - 1) + 0.01
     enddo 
- 
+
+    taugrid=10**taugrid
+
+    do i = 1, ngrid
+        write(1, '(es15.7)') taugrid(i)
+    enddo
+
+    close(unit = 1)
 
 !--- since after rotation our arrays are called differently, and I did not come up 
 !  --- with an easier solution there are two possibilities: 
@@ -437,40 +520,40 @@
             end do  
           ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.25
  
-          if (tau(i,k,ccount ) .gt. 0.25 ) then  
+          if (tau(i,k,ccount - 1) .gt. 0.2 ) then  
            if (ccount .le. 10 ) then 
-             ttaugrid(1:ccount-1) =  taut(1:ccount-1)
-             ttaugrid(ccount:Ngrid) = taugrid(1:Ngrid-ccount+1) 
+             ttaugrid(i, k, 1:ccount-1) =  taut(1:ccount-1)
+             ttaugrid(i, k, ccount:Ngrid) = taugrid(1:Ngrid-ccount+1) 
 
            else 
              step = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
              do ti = 1,  9 
-               ttaugrid(ti) = 10.0**(tau1lg-(10-ti)*step )  
+               ttaugrid(i, k, ti) = 10.0**(tau1lg-(10-ti)*step )  
              end do 
-             ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
+             ttaugrid(i, k, 10:Ngrid) = taugrid(1:Ngrid-9)
            endif 
           else  
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+           ttaugrid(i, k, 1:Ngrid) = taugrid(1:Ngrid)
           endif 
 
          else
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+           ttaugrid(i, k, 1:Ngrid) = taugrid(1:Ngrid)
 
          end if 
 
 
 !        now  interpolate
  
-           indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outT(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, tempp, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outP(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, tempr, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, zgrid, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outz(i,k,1:Ngrid) = tempa(1:Ngrid)
   
 
@@ -512,6 +595,7 @@
 
 !-----  finished reading it. 
 
+       open(unit = 1845, file = 'tau.log')
 
        do i = 1, Nx
           do k = 1, Ny
@@ -536,55 +620,79 @@
 
 !    before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
          if (taut(3) .lt. taugrid(1)) then
-          !  here the top has smaller tau ross than top of the grid, need to find out how many points and make an
-          !  additional chunk of the tau grid.
-           ccount = 4
-            do while (taut(ccount) .lt. taugrid(1) ) 
-              ccount = ccount +1
+
+          ! here the top has smaller tau ross than top of the grid, need to find out how many points and make an
+          ! additional chunk of the tau grid.
+            ccount = 4
+
+            do while (taut(ccount) .lt. taugrid(1))
+              ccount = ccount + 1
             end do 
 
-          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.25
+          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.2
+            if (tau(i, k, ccount - 1) .gt. 0.2) then
 
-          if (tau(i,k,ccount ) .gt. 0.25 ) then
-           if (ccount .le. 10 ) then
-             ttaugrid(1:ccount-1) =  taut(1:ccount-1)
-             ttaugrid(ccount:Ngrid) = taugrid(1:Ngrid-ccount+1)
+               if (ccount .le. 10) then
 
-           else
-             step = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0 
-             do ti = 1,  9
-               ttaugrid(ti) = 10.0**(tau1lg-(10-ti)*step )
-             end do
-             ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
-           endif
-          else
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
-          endif
+!                  ttaugrid(i, k, 1 : ccount - 1) = taut(1 : ccount - 1)
+                  ttaugrid(i, k, 1 : ccount - 2) = taut(2 : ccount - 1) ! tau(1 : count - 1) -> tau(2 : count - 1)
+!                  ttaugrid(i, k, ccount : Ngrid) = taugrid(1 : Ngrid - ccount + 1)
+                  ttaugrid(i, k, ccount - 1 : Ngrid) = taugrid(1 : Ngrid - ccount + 2)
+
+                  write(1845, '(3(I3,2x),A)') i, k, 1, 'count <= 10'
+
+               else
+
+                  n_add = 5
+
+                  step = (tau1lg - dlog10(taut(2))) / n_add ! tau(1) -> tau(2), n_add change
+
+                  do ti = 1, n_add
+                     ttaugrid(i, k, ti) = 10.0**(tau1lg - (n_add + 1 - ti) * step)
+                  enddo
+
+                  ttaugrid(i, k, n_add + 1 : Ngrid) = taugrid(1 : Ngrid - n_add)
+
+                  write(1845, '(3(I3,2x),A)') i, k, 2, 'count > 10'
+
+               endif
+
+            else
+
+               ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
+
+               write(1845, '(3(I3,2x),A)') i, k, 3, 'tau200 <= 0.2'
+
+            endif
 
          else
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+
+            ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
+
+            write(1845, '(3(I3,2x),A)') i, k, 4, 'extrap'
 
          end if
 
+           ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(i, k, 1 : Ngrid)
 
 !        now  interpolate
-          indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
+          indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outT(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, tempp, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outP(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, tempr, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-           indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
+           indum = map1(taut, zgrid, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outz(i,k,1:Ngrid) = tempa(1:Ngrid)
 
           end do  
        end do 
      endif 
 
-
+     close(unit = 1845)
 
    endif 
 
@@ -609,7 +717,6 @@
        write(1,*) Ngrid, tau1lg, step , tau2lg, Nx, Ny, dx, dy 
        close(unit=1)
 
-
 !----- this was for debugging
 
 !       open (unit =1, file ='structure.dat')
@@ -623,7 +730,6 @@
 !       end do
 !       close (unit=1) 
 ! --- end for debugging 
-
 
 !      Temperature 
        filename='T_onTau.'//trim(filenumber)//'.nc'
@@ -648,8 +754,10 @@
         call write_netcdf(ncid, myrank, sizee, 'Z', outz, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
 
-
-
+       filename='taugrid.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'tau', ttaugrid_sp, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
 
      else if (tau200 .or. ifmu) then 
 ! write new NetCDF file for bv and tau_ross

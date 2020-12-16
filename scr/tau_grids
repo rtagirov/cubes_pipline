@@ -1,0 +1,85 @@
+#!/bin/bash
+
+function move_output()
+{
+
+nc=$(ls *.nc)
+hd=$(ls Header_*)
+
+for f in $nc; do
+
+    mv $f $f.$1
+
+    mv $f.$1 -t ./nc/
+
+done
+
+for f in $hd; do
+
+    mv $f $f.$1
+
+    mv $f.$1 -t ./header/
+
+done
+
+mv tau.out tau.out.$1
+mv tau.log tau.log.$1
+
+mv tau.out.$1 -t ./header/
+mv tau.log.$1 -t ./header/
+
+}
+
+#step=7.562792000650358E-002
+step=0.08
+
+#exit 0
+
+#top='-9.5 -9.0 -8.5 -8.0 -7.5 -7.0'
+top='-7.0 -7.5 -8.0 -8.5 -9.0 -9.5'
+#top='-7.0'
+#bot='1.4 1.2 1.0'
+
+declare -i j
+
+j=0
+
+for l in $top; do
+
+    sed -i '$ d' INPUT
+
+    echo $l $step 2.0 >> INPUT
+
+    ./cpline.exe
+
+    move_output $j
+
+    j=$j+1
+
+done
+
+#for u in $bot; do
+
+#    sed -i '$ d' INPUT
+
+#    echo -10.0 $step $u >> INPUT
+
+#    ./cpline.exe
+
+#    move_output $j
+
+#    j=$j+1
+
+#done
+
+#exit 0
+
+sed -i '$ d' INPUT
+
+echo -10.0 $step 2.0 >> INPUT
+
+./cpline.exe
+
+move_output $j
+
+python extract_atms_netcdf.py
