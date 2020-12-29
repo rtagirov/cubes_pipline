@@ -8,10 +8,12 @@ module initcalc
 
 contains
 
- subroutine init_calc(mu, tau1lg, step, tau2lg, pivot_in ) 
+ subroutine init_calc(mu, tau1lg, step, tau2lg, pivot_in, numoutput) 
  
    implicit none 
    real(kind=8), intent(out) :: mu, step, tau1lg, tau2lg, pivot_in 
+
+   integer, intent(out) :: numoutput
 
    integer iread,  rot, interpol, tau
   
@@ -34,6 +36,7 @@ contains
     read(2,*) interpol
     read(2,*) pivot_in
     read(2,*) tau1lg, step, tau2lg 
+    read(2,*) numoutput
    close(unit=2) 
 !------------------------------
   if (iread .eq. 1) binread =.true.
@@ -52,7 +55,7 @@ contains
 !--- write out what is going to be calculated: ------!
    print*,'---------------------------------------------------'
    print*,'Routine to convert MURam cubes to Rays             '
-   print*,'by V. Witkze                                       '
+   print*,'by V. Witzke                                       '
    print*,'                                                   '
    print*,'---------------------------------------------------'
    print*,' Summary of the calculation:                       '

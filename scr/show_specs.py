@@ -48,14 +48,14 @@ snapshot = str(int(np.loadtxt('snapshot.inp')))
 #dpn = [10, 9, 8, 7, 6, 1, 2, 3, 4, 5, 0]
 #dpn = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 #dpn = [6, 5, 4, 3, 2, 1, 0]
-dpn = [0, 1, 2, 3, 4, 5, 6]
+dpn = [0, 1, 2, 3, 4, 5, 6, 7]
 
 #sys.exit()
 
 #atn = [i for i in range(1, 901)]
-#atn = [i for i in range(1, 101)]
+atn = [i for i in range(1, 101)]
 #atn = [i for i in range(1, 401)]
-atn = [i for i in range(1, 26)]
+#atn = [i for i in range(1, 26)]
 
 f = open('./tau_grid_specs/fail.log', 'r')
 
@@ -76,11 +76,15 @@ r = np.unique(np.array(r))
 
 for elem in r: atn.remove(elem)
 
-delta = sys.argv[1]
+#delta = sys.argv[1]
 
-if delta == '1.0':  npzdir = './npz_1nm/'
-if delta == '0.1':  npzdir = './npz_01nm/'
-if delta == '0.01': npzdir = './npz_001nm/'
+#if delta == '1.0':  npzdir = './npz_1nm/'
+#if delta == '0.1':  npzdir = './npz_01nm/'
+#if delta == '0.01': npzdir = './npz_001nm/'
+
+delta = '1.0'
+
+npzdir = './npz_1nm/'
 
 #w = np.loadtxt('./tau_grid_specs/spec.0.' + str(atn[0]), usecols = [0]) / 10.0
 
@@ -166,7 +170,7 @@ f2 = open('means_208_' + delta, 'w')
 
 #labels = ['-7.5', '-8.0', '-8.5', '-9.0', '-9.5', '1.8', '1.6', '1.4', '1.2', '1.0']
 #labels = ['-9.5', '-9.0', '-8.5', '-8.0', '-7.5', '-7.0']
-labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
+labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)', '-10.0 (6)']
 
 #for i in tqdm(range(len(dpn) - 1)):
 for i in range(len(dpn) - 1):
@@ -245,10 +249,10 @@ os.system('pdftk ' + s + 'output ' + 'devs.pdf')
 
 #sys.exit()
 
-col = ['blue', 'orange', 'green', 'red', 'purple', 'cyan']
+col = ['magenta', 'blue', 'orange', 'green', 'red', 'purple', 'cyan']
 
 #wid = [1, 2, 3, 4, 5]
-wid = [6, 5, 4, 3, 2, 1]
+wid = [7, 6, 5, 4, 3, 2, 1]
 #wid = [1, 2, 3, 4, 5, 6]
 
 for j in range(len(atn)):
@@ -269,19 +273,21 @@ for j in range(len(atn)):
     ax[1].set_ylabel('Temperature, K')
 
     ax[0].set_xlim(180, 300)
-    ax[0].set_ylim(0.95, 1.05)
-    ax[1].set_xlim(180, 300)
-    ax[1].set_ylim(0.95, 1.05)
+    ax[0].set_ylim(0.50, 1.50)
+#    ax[1].set_xlim(180, 300)
+#    ax[1].set_ylim(0.95, 1.05)
 
     ax[1].set_ylim(-2000, 14000)
     ax[1].set_xscale('log')
 
     ax[0].xaxis.set_minor_locator(AutoMinorLocator(10))
     ax[0].xaxis.set_major_locator(MultipleLocator(10))
+    ax[0].yaxis.set_minor_locator(AutoMinorLocator(4))
+    ax[0].yaxis.set_major_locator(MultipleLocator(0.1))
 #    ax[1].xaxis.set_minor_locator(AutoMinorLocator(10))
 #    ax[1].xaxis.set_major_locator(MultipleLocator(10))
 
-#    ax[0].fill_between(w, 0.95, 1.05, color = 'gray', alpha=0.2)
+    ax[0].fill_between(w, 0.80, 1.20, color = 'gray', alpha=0.2)
 #    ax[1].fill_between(w, 0.95, 1.05, color = 'gray', alpha=0.2)
 
     for i in range(len(dpn)):
@@ -295,12 +301,12 @@ for j in range(len(atn)):
         ratio = I[i, j, :] / I[len(dpn) - 1, j, :]
 #        ratio = I[i, j, :] / I[0, j, :]
 
-        if dpn[i] == 6:
+        if dpn[i] == 7:
 
             ax[0].plot(w, ratio, color = 'k', linestyle = '--')
 #            ax[1].plot(w, ratio, color = 'k', linestyle = '--')
 
-        if dpn[i] >= 0 and dpn[i] <= 5:
+        if dpn[i] >= 0 and dpn[i] <= 6:
 
             ax[0].plot(w, ratio, label = labels[i], color = col[i], linewidth = wid[i])
 
@@ -308,22 +314,22 @@ for j in range(len(atn)):
 
 #            ax[0].plot(w, ratio, label = labels[dpn[i] - 1], color = col[dpn[i] - 6], linewidth = wid[dpn[i] - 6])
 
-        if dpn[i] == 6:                 ax[1].plot(tau, T, color = 'k')
-        if dpn[i] >= 0 and dpn[i] <= 5: ax[1].plot(tau, T - (6 - dpn[i]) * 500, color = col[i])
+        if dpn[i] == 7:                 ax[1].plot(tau, T, color = 'k')
+        if dpn[i] >= 0 and dpn[i] <= 6: ax[1].plot(tau, T - (7 - dpn[i]) * 500, color = col[i])
 #        if dpn[i] > 5:                  ax[2].plot(tau, T + (dpn[i] - 5) * 500, color = col[dpn[i] - 6])
 
     ax[1].set_xlim(110.0, 1e-15)
 
 #    leg = ax[0].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5}, bbox_to_anchor=(0.95, 1.15))
 #    leg = ax[1].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5}, bbox_to_anchor=(0.95, 1.15))
-    leg0 = ax[0].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
+#    leg0 = ax[0].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
 #    leg1 = ax[1].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
 
 
     handles, labels = ax[0].get_legend_handles_labels()
-    ax[0].legend(reversed(handles), reversed(labels))
+    ax[0].legend(reversed(handles), reversed(labels), loc = 4)
 
-    for obj in leg0.legendHandles: obj.set_linewidth(3.0)
+#    for obj in leg0.legendHandles: obj.set_linewidth(3.0)
 #    for obj in leg1.legendHandles: obj.set_linewidth(3.0)
 
     fig.savefig('./specs/spec.' + str(j) + '.pdf', bbox_inches = 'tight')

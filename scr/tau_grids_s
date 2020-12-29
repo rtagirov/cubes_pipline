@@ -3,16 +3,41 @@
 function move_output()
 {
 
-nc=$(ls *.nc)
+nc1=$(ls *_onTau.*.nc taugrid.*.nc)
+
+nc2=$(ls P.*.nc T.*.nc rho.*.nc tauross.*.nc tau200.*.nc)
+
 hd=$(ls Header_*)
 
-for f in $nc; do
+if [ "$1" != 0 ]; then
 
-    mv $f $f.$1
+    for f in $nc1; do
 
-    mv $f.$1 -t ./nc/
+        mv $f $f.$1
 
-done
+        mv $f.$1 -t ./nc/
+
+    done
+
+    rm $nc2
+
+elif [ "$1" == 0 ]; then
+
+    for f in $nc1; do
+
+        mv $f $f.$1
+
+        mv $f.$1 -t ./nc/
+
+    done
+
+    for f in $nc2; do
+
+        mv $f -t ./nc/
+
+    done
+
+fi
 
 for f in $hd; do
 
@@ -30,13 +55,21 @@ mv tau.log.$1 -t ./header/
 
 }
 
+if [ ! $1 ]; then 
+
+    echo "The script expects an argument. Abort."
+
+    exit 0
+
+fi
+
 #step=7.562792000650358E-002
 step=0.08
 
 #exit 0
 
 #top='-9.5 -9.0 -8.5 -8.0 -7.5 -7.0'
-top='-7.0 -7.5 -8.0 -8.5 -9.0 -9.5'
+top='-7.0 -7.5 -8.0 -8.5 -9.0 -9.5 -10.0'
 #top='-7.0'
 #bot='1.4 1.2 1.0'
 
@@ -74,12 +107,12 @@ done
 
 #exit 0
 
-sed -i '$ d' INPUT
+#sed -i '$ d' INPUT
 
-echo -10.0 $step 2.0 >> INPUT
+#echo -10.0 $step 2.0 >> INPUT
 
-./cpline.exe
+#./cpline.exe
 
-move_output $j
+#move_output $j
 
-python extract_atms_netcdf.py
+python extract_atms_netcdf.py $1

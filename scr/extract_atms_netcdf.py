@@ -97,36 +97,83 @@ for n in tqdm(dpns):
 
     atmlog.close()
 
-T = np.fromfile('eosT.'     + snapshot + '.bin', dtype = np.float32)
-p = np.fromfile('eosP.'     + snapshot + '.bin', dtype = np.float32)
-d = np.fromfile('result_0.' + snapshot + '.bin', dtype = np.float32)
+#T = np.fromfile('eosT.'     + snapshot + '.bin', dtype = np.float32)
+#p = np.fromfile('eosP.'     + snapshot + '.bin', dtype = np.float32)
+#d = np.fromfile('result_0.' + snapshot + '.bin', dtype = np.float32)
 
-dims = np.loadtxt('dims.inp')
+#dims = np.loadtxt('dims.inp')
 
-Nz = int(dims[0])
+#Nz = int(dims[0])
 
-T = T.reshape(512, 512, Nz)
-p = p.reshape(512, 512, Nz)
-d = d.reshape(512, 512, Nz)
+#T = T.reshape(512, 512, Nz)
+#p = p.reshape(512, 512, Nz)
+#d = d.reshape(512, 512, Nz)
 
-dz = dims[3] / 1e+5
+#dz = dims[3] / 1e+5
 
-z = np.arange(Nz - 1, -1, -1) * dz
+#z = np.arange(Nz - 1, -1, -1) * dz
+
+#if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
+
+#    os.mkdir('./atms/' + str(np.max(dpns) + 1))
+
+#k = 1
+
+#for i, j in itertools.product(r1, r2):
+
+#    Tk = np.flip(T[i, j, :])
+#    pk = np.flip(p[i, j, :])
+#    dk = np.flip(d[i, j, :])
+
+#    np.savetxt('./atms/' + str(np.max(dpns) + 1) + '/atm.' + str(k), \
+#               np.column_stack([z, Tk, pk, dk]), \
+#               fmt = ('%6.1f', '%7.1f', '%7.5e', '%7.5e'), delimiter = '  ')
+
+#    k += 1
+
+
+T = np.array(netCDF4.Dataset('./nc/T.'   + snapshot + '.nc')['T'])
+p = np.array(netCDF4.Dataset('./nc/P.'   + snapshot + '.nc')['P'])
+d = np.array(netCDF4.Dataset('./nc/rho.' + snapshot + '.nc')['R'])
+
+tauros = np.array(netCDF4.Dataset('./nc/tauross.' + snapshot + '.nc')['tau'])
+tau200 = np.array(netCDF4.Dataset('./nc/tau200.' + snapshot + '.nc')['tau'])
+
+dz = np.loadtxt('dims.inp')[3] / 1e+5
+
+z = np.arange(len(T[:, 0, 0]) - 2, -1, -1) * dz
 
 if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
 
     os.mkdir('./atms/' + str(np.max(dpns) + 1))
 
+if not os.path.isdir('./taugrids/' + str(np.max(dpns) + 1)):
+
+    os.mkdir('./taugrids/' + str(np.max(dpns) + 1))
+
 k = 1
 
 for i, j in itertools.product(r1, r2):
 
-    Tk = np.flip(T[i, j, :])
-    pk = np.flip(p[i, j, :])
-    dk = np.flip(d[i, j, :])
+    Tk = T[1 :, j, i]
+    pk = p[1 :, j, i]
+    dk = d[1 :, j, i]
+
+    taurosk = tauros[1 :, j, i]
+    tau200k = tau200[1 :, j, i]
+
+    idx = np.where(taurosk <= 150.0)[0]
+
+    zk = z[idx]
+
+    zk -= min(zk)
 
     np.savetxt('./atms/' + str(np.max(dpns) + 1) + '/atm.' + str(k), \
-               np.column_stack([z, Tk, pk, dk]), \
+               np.column_stack([zk, Tk[idx], pk[idx], dk[idx]]), \
                fmt = ('%6.1f', '%7.1f', '%7.5e', '%7.5e'), delimiter = '  ')
+
+    np.savetxt('./taugrids/' + str(np.max(dpns) + 1) + '/taugrid.' + str(k), \
+               np.column_stack([zk, taurosk[idx], tau200k[idx], Tk[idx]]), \
+               fmt = ('%11.6f', '%7.5e', '%7.5e', '%12.6f'), delimiter = '  ')
 
     k += 1

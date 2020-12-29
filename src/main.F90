@@ -15,16 +15,18 @@
   integer nump2, numt2
 
 ! --- for writting nc files
-  integer ier, ncid 
+  integer ier, ncid, numoutput
+  character(len=2) no
+
 ! --- loop integers
   integer i,j,k,m, ti 
 
  
 !--- reading cube:
-  character(len=80)  filename1, filename2, filename3, filename 
-  character(len=80)  folder
-  character(len=6)   filenumber
-  character(len=50)  numberx
+  character(len=80) filename1, filename2, filename3, filename 
+  character(len=80) folder
+  character(len=6)  filenumber
+  character(len=50) numberx
 
 ! --- for zgrid 
   real(kind=8)  dx, dz, dy
@@ -40,12 +42,14 @@
   integer Ngridmax 
   parameter( Ngridmax = 128)
    
-  real(kind=8) maxz, tau1lg, step, tau2lg
+  real(kind=8) maxz, tau1lg, step, tau2lg, step_add
  
   
 !--- functions -----------------------------------------------!  
   real(kind=8) introssk
   integer      map1
+
+!------ other ----------!
 
   real(kind = 8) :: mean1, mean2, mean3, sigma1, sigma2, sigma3
   real(kind = 8) :: maxim1, maxim2, maxim3
@@ -62,7 +66,7 @@
 !      initialize
 ! ---- read control file and set all logicals ------------------
  
-    call init_calc(mu, tau1lg, step, tau2lg, pivot_in)
+    call init_calc(mu, tau1lg, step, tau2lg, pivot_in, numoutput)
     if (gettaug) then 
      Ngrid  = (int((tau2lg - tau1lg)/step) + 1) + 10 ! add 10 additional points for the top!  
 !     if (Ngrid .gt. Ngridmax) then 
@@ -220,7 +224,8 @@
  
    if (T(1,1,1) .gt. T(1,1,nz)) then 
      print*, ' Cube was upside-down we flip it!' 
-     ! cubes are point upwards! 
+
+     ! cubes point upwards! 
      call swap_cube(T, nx, ny, nz, 3, temparr)
      T = temparr 
      temparr = 0.0 
@@ -427,7 +432,11 @@
    
    print*, ' Start to set up tau-grid onto which to interpolate' 
      
-    open(unit = 1, file = 'tau.out')
+    call str(numoutput, no)
+
+!    write(*, *) 'here is the string ', numoutput, '   ', no
+
+    open(unit = 1, file = 'tau.out.'//trim(no))
 
 !   --- get up taugrid 
 
@@ -526,9 +535,9 @@
              ttaugrid(i, k, ccount:Ngrid) = taugrid(1:Ngrid-ccount+1) 
 
            else 
-             step = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
+             step_add = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
              do ti = 1,  9 
-               ttaugrid(i, k, ti) = 10.0**(tau1lg-(10-ti)*step )  
+               ttaugrid(i, k, ti) = 10.0**(tau1lg-(10-ti)*step_add )  
              end do 
              ttaugrid(i, k, 10:Ngrid) = taugrid(1:Ngrid-9)
            endif 
@@ -595,7 +604,7 @@
 
 !-----  finished reading it. 
 
-       open(unit = 1845, file = 'tau.log')
+       open(unit = 1845, file = 'tau.log.'//trim(no))
 
        do i = 1, Nx
           do k = 1, Ny
@@ -643,12 +652,12 @@
 
                else
 
-                  n_add = 5
+                  n_add = 4
 
-                  step = (tau1lg - dlog10(taut(2))) / n_add ! tau(1) -> tau(2), n_add change
+                  step_add = (tau1lg - dlog10(taut(2))) / n_add ! tau(1) -> tau(2), n_add change
 
                   do ti = 1, n_add
-                     ttaugrid(i, k, ti) = 10.0**(tau1lg - (n_add + 1 - ti) * step)
+                     ttaugrid(i, k, ti) = 10.0**(tau1lg - (n_add + 1 - ti) * step_add)
                   enddo
 
                   ttaugrid(i, k, n_add + 1 : Ngrid) = taugrid(1 : Ngrid - n_add)
@@ -675,8 +684,8 @@
 
            ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(i, k, 1 : Ngrid)
 
-!        now  interpolate
-          indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
+!          now interpolate
+           indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
            outT(i,k,1:Ngrid) = tempa(1:Ngrid)
 
            indum = map1(taut, tempp, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
@@ -711,10 +720,11 @@
       !---- need to get mu as a number for the file name:
        call str(int(mu*10), numberx)
 ! since the cube is rotated, the dz is changed, write out a new Headerfile:
-       filename='Header_mu_'//trim(numberx)//'.'//trim(filenumber)
+       filename='Header_mu_'//trim(numberx)//'.'//trim(filenumber)//'.'//trim(no)
        open (unit = 1, file= filename, form='formatted')
        write (1,*) ' tau-grid points, start lgtau, step, finish lgtau,  Nx, Ny, dx,  dy' 
-       write(1,*) Ngrid, tau1lg, step , tau2lg, Nx, Ny, dx, dy 
+       write(1, '(i3,2x,f16.8,2x,es10.3,2x,f16.8,2x,2(i3,2x),2(f16.8))') &
+                Ngrid,  tau1lg,   step,    tau2lg,   Nx, Ny,   dx, dy 
        close(unit=1)
 
 !----- this was for debugging
@@ -732,32 +742,68 @@
 ! --- end for debugging 
 
 !      Temperature 
-       filename='T_onTau.'//trim(filenumber)//'.nc'
+       filename='T_onTau.'//trim(filenumber)//'.nc.'//trim(no)
         call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
         call write_netcdf(ncid, myrank, sizee, 'T', outT, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
 
 !      Presssure  
-       filename='P_onTau.'//trim(filenumber)//'.nc'
+       filename='P_onTau.'//trim(filenumber)//'.nc.'//trim(no)
         call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
         call write_netcdf(ncid, myrank, sizee, 'P', outP, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
 !      density 
-       filename='rho_onTau.'//trim(filenumber)//'.nc'
+       filename='rho_onTau.'//trim(filenumber)//'.nc.'//trim(no)
         call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
         call write_netcdf(ncid, myrank, sizee, 'R', outrho, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
 !---- zgrid 
 
-       filename='Z_onTau.'//trim(filenumber)//'.nc'
+       filename='Z_onTau.'//trim(filenumber)//'.nc.'//trim(no)
         call  create_netcdf(ncid, filename, 'Z',  nx, ny, nzz, ier)
         call write_netcdf(ncid, myrank, sizee, 'Z', outz, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
 
-       filename='taugrid.'//trim(filenumber)//'.nc'
+       filename='taugrid.'//trim(filenumber)//'.nc.'//trim(no)
         call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
         call write_netcdf(ncid, myrank, sizee, 'tau', ttaugrid_sp, nx, nx, ny, nzz, comm, ier)
         call close_netcdf(ncid, ier)
+
+       if (numoutput == 0) then
+
+       Nzz = Nzcut
+
+!      Original temperature 
+       filename='T.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'T', T, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
+
+!      Oringial pressure  
+       filename='P.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'P', P, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
+
+!      Original density 
+       filename='rho.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'R', rho, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
+
+!      original tau rosseland of the cube
+       filename='tauross.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'tau', taur, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
+
+!      tau200 of the cube
+       filename='tau200.'//trim(filenumber)//'.nc'
+        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+        call write_netcdf(ncid, myrank, sizee, 'tau', tau, nx, nx, ny, nzz, comm, ier)
+        call close_netcdf(ncid, ier)
+
+       endif
 
      else if (tau200 .or. ifmu) then 
 ! write new NetCDF file for bv and tau_ross

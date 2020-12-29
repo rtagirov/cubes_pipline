@@ -1,0 +1,54 @@
+#!/bin/bash
+
+function move_output()
+{
+
+nc=$(ls *_onTau.*.nc.* taugrid.*.nc.* P.*.nc T.*.nc rho.*.nc tauross.*.nc tau200.*.nc)
+
+hd=$(ls Header_* tau.out.* tau.log.*)
+
+for f in $nc; do mv $f -t ./nc/; done
+
+for f in $hd; do mv $f -t ./header; done
+
+}
+
+if [ ! $1 ]; then 
+
+    echo "The script expects an argument. Abort."
+
+    exit 0
+
+fi
+
+step=0.08
+#step=0.04
+
+top='-7.0 -7.5 -8.0 -8.5 -9.0 -9.5 -10.0'
+
+declare -i j
+
+j=0
+
+for l in $top; do
+
+    sed -i '8,9d' INPUT
+
+    echo $l $step 2.0 >> INPUT
+    echo $j >> INPUT
+
+    mkdir -p log
+
+    ./cpline.exe > ./log/log.$j & 
+
+    sleep 1
+
+    j=$j+1
+
+done
+
+wait
+
+move_output
+
+python extract_atms_netcdf.py $1

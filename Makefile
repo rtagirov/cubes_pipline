@@ -1,4 +1,5 @@
 FC=ifort 
+#FC=gfortran
 #FC= mpif90    
 PROG=cpline.exe
 
