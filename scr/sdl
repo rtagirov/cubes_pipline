@@ -1,0 +1,15 @@
+#!/bin/bash
+
+dir=$(pwd)
+
+IFS='/' read -r -a array <<< "$dir"
+
+reverse=$(echo "${array[@]} " | tac -s ' ')
+
+r=($reverse)
+
+echo ${r[0]}
+echo ${r[1]}
+echo ${r[2]}
+
+rsync -rv rtagirov@login.hpc.ic.ac.uk:/rds/general/user/rtagirov/ephemeral/runs/nessy/${r[2]}/${r[1]}/${r[0]}/spec/ ./tau_grid_specs/

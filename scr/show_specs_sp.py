@@ -172,21 +172,7 @@ f2 = open('means_208_' + delta, 'w')
 #labels = ['-7.5', '-8.0', '-8.5', '-9.0', '-9.5', '1.8', '1.6', '1.4', '1.2', '1.0']
 #labels = ['-9.5', '-9.0', '-8.5', '-8.0', '-7.5', '-7.0']
 #labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)', '-10.0 (6)']
-
-if len(sys.argv) < 2:
-
-    print('Inner/outer boundary or step?')
-
-    sys.exit()
-
-if sys.argv[1] == 'o': labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
-if sys.argv[1] == 'i': labels = ['1.1 (0)',  '1.2 (1)',  '1.3 (2)',  '1.4 (3)',  '1.5 (4)',  '1.6 (5)']
-if sys.argv[1] == 's': labels = ['0.20 (67)', '0.18 (73)', '0.16 (81)', '0.14 (91)', '0.12 (105)', '0.10 (124)']
-#if sys.argv[1] == 's': labels = ['0.100 (124)', '0.095 (129)', '0.090 (136)', '0.085 (143)', '0.080 (152)', '0.075 (161)']
-
-lbls = []
-
-for item in labels: lbls.append(item.split()[0])
+labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
 
 #for i in tqdm(range(len(dpn) - 1)):
 for i in range(len(dpn) - 1):
@@ -195,13 +181,12 @@ for i in range(len(dpn) - 1):
 
     fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
 
-    n1 = str(np.max(ave[2, i, :]))[:8]
-    n2 = str(np.max(mde[2, i, :]))[:8]
+    n1 = str(np.max(ave[2, i, :]))[:4]
+    n2 = str(np.max(mde[2, i, :]))[:4]
     n3 = str(np.mean(ave[2, i, :]))[:4]
     n4 = str(np.std(ave[2, i, :]))[:4]
 
-#    f1.write(str(dpn[i]) + ' ' + n1 + ' ' + n2 + '\n')
-    f1.write(lbls[i] + ' ' + n1 + ' ' + n2 + '\n')
+    f1.write(str(dpn[i]) + ' ' + n1 + ' ' + n2 + '\n')
 
     label0 = r'180 nm $<\lambda<$ 208 nm, ' + n3  + '%' + r'$+$' + n4 + '%'
 
@@ -209,17 +194,15 @@ for i in range(len(dpn) - 1):
     ax[0].fill_between(np.arange(len(atn)), ave[2, i, :], ave[2, i, :] + std[2, i, :], label = label0)
     ax[0].fill_between(np.arange(len(atn)), ave[2, i, :], mde[2, i, :], alpha = 0.5)
 
-    ax[0].axhline(y = np.mean(ave[2, i, :]), color = 'k', linewidth = 2.5)
-    ax[0].axhline(y = np.mean(ave[2, i, :]) + np.std(ave[2, i, :]), linestyle = '--', color = 'k', linewidth = 2.5)
+    ax[0].axhline(y = np.mean(ave[2, i, :]), color = 'k', linewidth = 0.5)
+    ax[0].axhline(y = np.mean(ave[2, i, :]) + np.std(ave[2, i, :]), linestyle = '--', color = 'k', linewidth = 0.5)
 
-    ax[0].grid(which = 'both', axis = 'y')
-
-    n1 = str(np.max(ave[1, i, :]))[:8]
-    n2 = str(np.max(mde[1, i, :]))[:8]
+    n1 = str(np.max(ave[1, i, :]))[:4]
+    n2 = str(np.max(mde[1, i, :]))[:4]
     n3 = str(np.mean(ave[1, i, :]))[:4]
     n4 = str(np.std(ave[1, i, :]))[:4]
 
-    f2.write(lbls[i] + ' ' + n1 + ' ' + n2 + '\n')
+    f2.write(str(dpn[i]) + ' ' + n1 + ' ' + n2 + '\n')
 
     label1 = r'208 nm $<\lambda<$ 300 nm, ' + n3 + '%' + r'$+$' + n4 + '%'
 
@@ -227,28 +210,26 @@ for i in range(len(dpn) - 1):
     ax[1].fill_between(np.arange(len(atn)), ave[1, i, :], ave[1, i, :] + std[1, i, :], label = label1)
     ax[1].fill_between(np.arange(len(atn)), ave[1, i, :], mde[1, i, :], alpha = 0.5)
 
-    ax[1].axhline(y = np.mean(ave[1, i, :]), color = 'k', linewidth = 2.5)
-    ax[1].axhline(y = np.mean(ave[1, i, :]) + np.std(ave[1, i, :]), linestyle = '--', color = 'k', linewidth = 2.5)
-
-    ax[1].grid(which = 'both', axis = 'y')
+    ax[1].axhline(y = np.mean(ave[1, i, :]), color = 'k', linewidth = 0.5)
+    ax[1].axhline(y = np.mean(ave[1, i, :]) + np.std(ave[1, i, :]), linestyle = '--', color = 'k', linewidth = 0.5)
 
     ax[0].set_xlabel('Atmosphere number')
     ax[1].set_xlabel('Atmosphere number')
     ax[0].set_ylabel('Average deviation, %')
 
-    ax[0].set_xlim(0, len(atn) + 100)
-    ax[1].set_xlim(0, len(atn) + 100)
-    ax[0].set_ylim(0, 20)
-    ax[1].set_ylim(0, 20)
+    ax[0].set_xlim(0, len(atn))
+    ax[1].set_xlim(0, len(atn))
+    ax[0].set_ylim(0, 5)
+    ax[1].set_ylim(0, 5)
 
     ax[0].yaxis.set_major_locator(MultipleLocator(5))
     ax[1].yaxis.set_major_locator(MultipleLocator(5))
     ax[0].yaxis.set_minor_locator(AutoMinorLocator(5))
     ax[1].yaxis.set_minor_locator(AutoMinorLocator(5))
 
-    if sys.argv[1] == 'o': fig.suptitle('log(tau_outer) = ' + labels[i])
-    if sys.argv[1] == 'i': fig.suptitle('log(tau_inner) = ' + labels[i])
-    if sys.argv[1] == 's': fig.suptitle('log(tau) step = ' + labels[i])
+#    if dpn[i] >= 1 and dpn[i] <= 5: fig.suptitle('log(tau_outer) = ' + labels[dpn[i] - 1])
+#    if dpn[i] >  5:                 fig.suptitle('log(tau_inner) = ' + labels[dpn[i] - 1])
+    fig.suptitle('log(tau_outer) = ' + labels[i])
 
     leg0 = ax[0].legend(loc = 2, framealpha = 1, handlelength=0, handletextpad=0, prop = {'size': 7.5})
     leg1 = ax[1].legend(loc = 2, framealpha = 1, handlelength=0, handletextpad=0, prop = {'size': 7.5})
@@ -278,106 +259,144 @@ col = ['magenta', 'blue', 'orange', 'purple', 'red', 'green']
 wid = [7, 6, 5, 4, 3, 2]
 #wid = [1, 2, 3, 4, 5, 6]
 
+#mean_dtr = np.zeros(len(atn))
+#mean_dt2 = np.zeros(len(atn))
+#mean_dev = np.zeros(len(atn))
+
 for j in range(len(atn)):
-#for j in range(3):
+#for j in [3, 5]:
+#for j in range(1):
 
     print(j)
 
-#    fig, ax = plt.subplots(nrows = 3, ncols = 1, figsize = (10, 8))
-    fig, ax = plt.subplots(nrows = 2, ncols = 1, figsize = (10, 8))
+    fig = plt.figure(figsize=(10, 8))
 
     fig.tight_layout()
 
-    ax[0].set_xlabel('Wavelength, nm')
+    grid = plt.GridSpec(2, 2, hspace = 0.225, wspace = 0.225)
 
-    if sys.argv[1] == 'o': ax[0].set_ylabel('Ratio (inner boundary)')
-    if sys.argv[1] == 'i': ax[0].set_ylabel('Ratio (outer boundary)')
-    if sys.argv[1] == 's': ax[0].set_ylabel('Ratio (step)')
+    ratios = fig.add_subplot(grid[0, 0])
+    dentau = fig.add_subplot(grid[0, 1])
+    temprs = fig.add_subplot(grid[1, 0])
+    denpre = fig.add_subplot(grid[1, 1])
 
-    ax[1].set_xlabel(r'$\tau_\mathrm{Ross}$')
-    ax[1].set_ylabel('Temperature, K')
+    dta200 = dentau.twinx()
+    dtaros = denpre.twinx()
 
-    ax[0].set_xlim(180, 300)
-    ax[0].set_ylim(0.70, 1.30)
-#    ax[1].set_xlim(180, 300)
-#    ax[1].set_ylim(0.95, 1.05)
+    ratios.set_xlabel('Wavelength, nm')
+    ratios.set_ylabel('Ratio (outer boundary)')
 
-    ax[1].set_ylim(-5000, 14000)
-    ax[1].set_xscale('log')
+    temprs.set_xlabel(r'$\tau_\mathrm{Ross}$')
+    temprs.set_ylabel('Temperature, K')
 
-    ax[0].xaxis.set_minor_locator(AutoMinorLocator(10))
-    ax[0].xaxis.set_major_locator(MultipleLocator(10))
-    ax[0].yaxis.set_minor_locator(AutoMinorLocator(4))
-#    ax[0].yaxis.set_major_locator(MultipleLocator(0.01))
-    ax[0].yaxis.set_major_locator(MultipleLocator(0.1))
-#    ax[1].xaxis.set_minor_locator(AutoMinorLocator(10))
-#    ax[1].xaxis.set_major_locator(MultipleLocator(10))
+    dentau.set_xlabel(r'$\tau_{200}$')
+    dentau.set_ylabel(r'Density, [$\mathrm{cm}^{-3}$]')
+    denpre.set_xlabel(r'$\tau_\mathrm{Ross}$')
+    denpre.set_ylabel(r'Density, [$\mathrm{cm}^{-3}$]')
+    dta200.set_ylabel(r'$\Delta\tau_{200}$')
+    dtaros.set_ylabel(r'$\Delta\tau_\mathrm{Ross}$')
 
-    ax[0].fill_between(w, 0.85, 1.15, color = 'gray', alpha=0.4)
-    ax[0].fill_between(w, 0.90, 1.10, color = 'gray', alpha=0.6)
-    ax[0].fill_between(w, 0.95, 1.05, color = 'gray', alpha=0.8)
+    ratios.set_xlim(180, 300)
+#    ratios.set_ylim(0.50, 1.50)
+    ratios.set_ylim(0.95, 1.05)
 
-    x, tau_orig, x, T_orig = np.loadtxt('./taugrids/7/taugrid.' + str(atn[j]), unpack = True)
+    temprs.set_xlim(1000.0, 1e-15)
+    temprs.set_ylim(-2000, 14000)
+
+    dentau.set_xlim(1e+5, 1e-4)
+    dentau.set_ylim(1e-15, 1e-5)
+    denpre.set_xlim(1000, 1e-15)
+    denpre.set_ylim(1e-14, 1e-3)
+    dtaros.set_ylim(1e-15, 1e+3)
+    dta200.set_ylim(1e-4, 1e+3)
+
+    dentau.set_xscale('log')
+    dentau.set_yscale('log')
+    dta200.set_yscale('log')
+    temprs.set_xscale('log')
+    denpre.set_xscale('log')
+    denpre.set_yscale('log')
+    dtaros.set_yscale('log')
+
+    ratios.xaxis.set_major_locator(MultipleLocator(20))
+    ratios.xaxis.set_minor_locator(AutoMinorLocator(4))
+    ratios.yaxis.set_minor_locator(AutoMinorLocator(4))
+    ratios.yaxis.set_major_locator(MultipleLocator(0.01))
+
+#    ratios.fill_between(w, 0.80, 1.20, color = 'gray', alpha=0.2)
 
     for i in range(len(dpn)):
 
-#        x, T, x, x = np.loadtxt('./atms/' + str(dpn[i]) + '/atm.' + str(atn[j]), unpack = True)
-
-        z, logtau, tau, T = np.loadtxt('./taugrids/' + str(dpn[i]) + '/taugrid.' + str(atn[j]), unpack = True)
-
-#        tau = np.loadtxt('./header/tau.out.' + str(dpn[i]))
-
         ratio = I[i, j, :] / I[len(dpn) - 1, j, :]
-#        ratio = I[i, j, :] / I[0, j, :]
 
-#        if dpn[i] == 7:
+        z, tau, T = np.loadtxt('./taugrids/' + str(dpn[i]) + '/taugrid.' + str(atn[j]), unpack = True)
+
         if dpn[i] == 6:
 
-            ax[0].plot(w, ratio, color = 'k', linestyle = '--')
-#            ax[1].plot(w, ratio, color = 'k', linestyle = '--')
+            ratios.plot(w, ratio, color = 'k', linestyle = '--')
 
-#        if dpn[i] >= 0 and dpn[i] <= 6:
         if dpn[i] >= 0 and dpn[i] <= 5:
 
-            ax[0].plot(w, ratio, label = labels[i], color = col[i], linewidth = wid[i])
+            ratios.plot(w, ratio, label = labels[i], color = col[i], linewidth = wid[i])
 
-#        if dpn[i] > 5:
-
-#            ax[0].plot(w, ratio, label = labels[dpn[i] - 1], color = col[dpn[i] - 6], linewidth = wid[dpn[i] - 6])
-
-#        if dpn[i] == 7:                 ax[1].plot(tau, T, color = 'k')
         if dpn[i] == 6:
 
-            if sys.argv[1] == 'o': ax[1].scatter(tau, T, color = 'k', s = 2, label = '-10 (6)')
-            if sys.argv[1] == 'i': ax[1].scatter(tau, T, color = 'k', s = 2, label = '2.0 (6)')
-            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.08 (152)')
-#            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.07 (172)')
+            temprs.scatter(tau, T, color = 'k', s = 2, label = '-10 (6)')
 
-            ax[1].scatter(tau_orig, T_orig + 1000, color = 'cyan', s = 2, label = 'Original')
-#        if dpn[i] >= 0 and dpn[i] <= 6: ax[1].plot(tau, T - (7 - dpn[i]) * 500, color = col[i])
         if dpn[i] >= 0 and dpn[i] <= 5:
 
-            ax[1].scatter(tau, T - (6 - dpn[i]) * 1000, color = col[i], s = 2, label = labels[i])
-#        if dpn[i] > 5:                  ax[2].plot(tau, T + (dpn[i] - 5) * 500, color = col[dpn[i] - 6])
+            temprs.scatter(tau, T - (6 - dpn[i]) * 500,  color = col[i], s = 2, label = labels[i])
 
-    ax[1].set_xlim(110.0, 1e-15)
+#        if dpn[i] == 6: mean_dev[j] = np.mean(np.abs(1.0 - ratio))
 
-#    leg = ax[0].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5}, bbox_to_anchor=(0.95, 1.15))
-#    leg = ax[1].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5}, bbox_to_anchor=(0.95, 1.15))
-#    leg0 = ax[0].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
-#    leg1 = ax[1].legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
+    z, T, p, d = np.loadtxt('./atms/7/atm.' + str(atn[j]), unpack = True)
 
-    handles, labels = ax[0].get_legend_handles_labels()
-    ax[0].legend(reversed(handles), reversed(labels), loc = 4)
+    z, tau, tau200, T = np.loadtxt('./taugrids/7/taugrid.' + str(atn[j]), unpack = True)
 
-    handles, labels = ax[1].get_legend_handles_labels()
-    leg1 = ax[1].legend(reversed(handles), reversed(labels), loc = 1)
+    dtauros = np.zeros(len(tau) - 1)
+    dtau200 = np.zeros(len(tau200) - 1)
 
-    for handle in leg1.legendHandles:
+    for k in range(len(dtau200)):
+
+        dtauros[k] = tau[k + 1] - tau[k]
+        dtau200[k] = tau200[k + 1] - tau200[k]
+
+    tau_d = tau[:len(tau) - 1]
+    tau200_d = tau200[:len(tau200) - 1]
+
+    t1 = 1.0
+    t2 = 10.0
+
+    idx1 = np.where((tau_d >= t1)    & (tau_d <= t2))[0]
+    idx2 = np.where((tau200_d >= t1) & (tau200_d <= t2))[0]
+
+#    mean_dtr[j] = np.mean(dtauros[idx1])
+#    mean_dt2[j] = np.mean(dtau200[idx2])
+
+    dtaros.scatter(tau_d,    dtauros, color = 'r',    s = 2, label = r'$\Delta\tau_\mathrm{Ross}$')
+    dta200.scatter(tau200_d, dtau200, color = 'r',    s = 2, label = r'$\Delta\tau_{200}$')
+    dentau.scatter(tau200,   d,       color = 'k',    s = 2, label = 'density')
+    denpre.scatter(tau,      d,       color = 'k',    s = 2, label = 'density')
+    temprs.scatter(tau,      T + 500, color = 'cyan', s = 2, label = 'Original')
+
+#   dta200.axvspan(t2, t1, color = 'gray', alpha = 0.5)
+#   dtaros.axvspan(t2, t1, color = 'gray', alpha = 0.5)
+
+#   dtaros.axvline(x = 1.0, linestyle = '--')
+
+    handles, labels = ratios.get_legend_handles_labels()
+    ratios.legend(reversed(handles), reversed(labels), loc = 4, prop = {'size': 7.0})
+
+    handles, labels = temprs.get_legend_handles_labels()
+    templeg = temprs.legend(reversed(handles), reversed(labels), loc = 1, prop = {'size': 7.0})
+
+    for handle in templeg.legendHandles:
         handle.set_sizes([50.0])
 
-#    for obj in leg0.legendHandles: obj.set_linewidth(3.0)
-#    for obj in leg1.legendHandles: obj.set_linewidth(3.0)
+    leg1 = dentau.legend(framealpha = 1, loc = 3, handletextpad = 1, prop = {'size': 7.5})
+    leg2 = denpre.legend(framealpha = 1, loc = 3, handletextpad = 1, prop = {'size': 7.5})
+    leg3 = dtaros.legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
+    leg4 = dta200.legend(framealpha = 1, loc = 1, handletextpad = 1, prop = {'size': 7.5})
 
     fig.savefig('./specs/spec.' + str(j) + '.pdf', bbox_inches = 'tight')
 
@@ -386,8 +405,20 @@ for j in range(len(atn)):
 s = ""
 
 for j in range(len(atn)):
-#for j in range(3):
+#for j in [3, 5]:
+#for j in range(1):
 
     s += './specs/spec.' + str(j) + '.pdf '
 
 os.system('pdftk ' + s + 'output ' + 'spec.pdf')
+
+#fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
+
+#ax[0].scatter(mean_dtr, mean_dev)
+#ax[1].scatter(mean_dt2, mean_dev)
+
+#ax[0].set_xlabel(r'$\left<\Delta\tau_\mathrm{Ross}\right>$')
+#ax[1].set_xlabel(r'$\left<\Delta\tau_{200}\right>$')
+#ax[0].set_ylabel(r'$\left<F_6 / F_{orig}\right>$')
+
+#fig.savefig('dtauvsrat.pdf', bbox_inches = 'tight')

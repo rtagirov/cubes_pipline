@@ -10,26 +10,15 @@ import sys
 import os
 import pathlib
 
+from scipy import interpolate
 from tqdm import tqdm
 
 snapshot = str(int(np.loadtxt('snapshot.inp')))
 
-#if len(sys.argv) < 2: sys.exit()
+if len(sys.argv) < 2: sys.exit()
 
-#r1 = random.sample(range(512), int(sys.argv[1]))
-#r2 = random.sample(range(512), int(sys.argv[1]))
-
-#np.savetxt('r1r2.out', \
-#           np.column_stack([np.array(r1), np.array(r2)]), \
-#           fmt = ('%3i', '%3i'), delimiter = '  ')
-
-r1, r2 = np.loadtxt('r1r2.out', unpack = True).astype(int)
-
-#print(r1)
-#print(r2)
-
-#sys.exit()
-
+r1 = random.sample(range(512), int(sys.argv[1]))
+r2 = random.sample(range(512), int(sys.argv[1]))
 #r1 = [439, 241, 395, 237, 205]
 #r2 = [197, 418, 495, 327, 46]
 
@@ -38,8 +27,7 @@ r1, r2 = np.loadtxt('r1r2.out', unpack = True).astype(int)
 #dpns = [40, 50, 60, 70, 80, 82, 90, 120]
 #dpns = [40, 50, 60, 70, 80, 90, 120]
 #dpns = np.arange(0, 10)
-#dpns = np.arange(0, 7)
-dpns = np.arange(0, 1)
+dpns = np.arange(0, 7)
 #dpns = np.arange(0, 6)
 #dpns = np.arange(0, 1)
 
@@ -68,13 +56,13 @@ for n in tqdm(dpns):
 
     tau = np.array(tau)
 
-    if not os.path.isdir('./atms/' + str(n)):
+#    if not os.path.isdir('./atms/' + str(n)):
 
-        pathlib.Path('./atms/' + str(n)).mkdir(parents=True, exist_ok=True)
+    pathlib.Path('./atms/' + str(n)).mkdir(parents=True, exist_ok=True)
 
-    if not os.path.isdir('./taugrids/' + str(n)):
+#    if not os.path.isdir('./taugrids/' + str(n)):
 
-        pathlib.Path('./taugrids/' + str(n)).mkdir(parents=True, exist_ok=True)
+    pathlib.Path('./taugrids/' + str(n)).mkdir(parents=True, exist_ok=True)
 
     taulog = np.loadtxt('./header/tau.log.' + str(n), usecols = [2]).reshape(512, 512).astype(int)
 
@@ -110,7 +98,7 @@ for n in tqdm(dpns):
         pk = np.delete(pk, idxl)
         dk = np.delete(dk, idxl)
 
-        zk = zk - np.min(zk)
+        zk -= np.min(zk)
 
         tauk =    np.delete(tauk, idxl)
         logtauk = np.delete(logtauk, idxl)
@@ -134,41 +122,6 @@ for n in tqdm(dpns):
 
     atmlog.close()
 
-#T = np.fromfile('eosT.'     + snapshot + '.bin', dtype = np.float32)
-#p = np.fromfile('eosP.'     + snapshot + '.bin', dtype = np.float32)
-#d = np.fromfile('result_0.' + snapshot + '.bin', dtype = np.float32)
-
-#dims = np.loadtxt('dims.inp')
-
-#Nz = int(dims[0])
-
-#T = T.reshape(512, 512, Nz)
-#p = p.reshape(512, 512, Nz)
-#d = d.reshape(512, 512, Nz)
-
-#dz = dims[3] / 1e+5
-
-#z = np.arange(Nz - 1, -1, -1) * dz
-
-#if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
-
-#    os.mkdir('./atms/' + str(np.max(dpns) + 1))
-
-#k = 1
-
-#for i, j in itertools.product(r1, r2):
-
-#    Tk = np.flip(T[i, j, :])
-#    pk = np.flip(p[i, j, :])
-#    dk = np.flip(d[i, j, :])
-
-#    np.savetxt('./atms/' + str(np.max(dpns) + 1) + '/atm.' + str(k), \
-#               np.column_stack([z, Tk, pk, dk]), \
-#               fmt = ('%6.1f', '%7.1f', '%7.5e', '%7.5e'), delimiter = '  ')
-
-#    k += 1
-
-
 T = np.array(netCDF4.Dataset('./nc/T.'   + snapshot + '.nc')['T'])
 p = np.array(netCDF4.Dataset('./nc/P.'   + snapshot + '.nc')['P'])
 d = np.array(netCDF4.Dataset('./nc/rho.' + snapshot + '.nc')['R'])
@@ -180,17 +133,25 @@ dz = np.loadtxt('dims.inp')[3] / 1e+5
 
 z = np.arange(len(T[:, 0, 0]) - 2, -1, -1) * dz
 
-if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
+#if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
+pathlib.Path('./atms/' + str(np.max(dpns) + 1)).mkdir(parents=True, exist_ok=True)
 
-    os.mkdir('./atms/' + str(np.max(dpns) + 1))
+#if not os.path.isdir('./atms/' + str(np.max(dpns) + 1)):
+pathlib.Path('./atms/' + str(np.max(dpns) + 1) + '_orig').mkdir(parents=True, exist_ok=True)
 
-if not os.path.isdir('./taugrids/' + str(np.max(dpns) + 1)):
+#if not os.path.isdir('./taugrids/' + str(np.max(dpns) + 1)):
+pathlib.Path('./taugrids/' + str(np.max(dpns) + 1)).mkdir(parents=True, exist_ok=True)
 
-    os.mkdir('./taugrids/' + str(np.max(dpns) + 1))
+#if not os.path.isdir('./taugrids/' + str(np.max(dpns) + 1)):
+pathlib.Path('./taugrids/' + str(np.max(dpns) + 1) + '_orig').mkdir(parents=True, exist_ok=True)
 
 k = 1
 
 for i, j in itertools.product(r1, r2):
+
+    zl, Tl, pl, dl = np.loadtxt('./atms/' + str(np.max(dpns)) + '/atm.' + str(k), unpack = True)
+
+    taul = np.loadtxt('./taugrids/' + str(np.max(dpns)) + '/taugrid.' + str(k), usecols = [2])
 
     Tk = T[1 :, j, i]
     pk = p[1 :, j, i]
@@ -199,20 +160,82 @@ for i, j in itertools.product(r1, r2):
     taurosk = tauros[1 :, j, i]
     tau200k = tau200[1 :, j, i]
 
-#    idx = np.where(taurosk <= 150.0)[0]
-    idx = np.where(z >= 2100)[0]
-#    idx = np.where(taurosk <= 1e+30)[0]
+    idx = np.where(taurosk <= 150.0)[0]
 
     zk = z[idx]
 
-    zk -= min(zk)
+    zk -= np.min(zk)
+
+    Tk = Tk[idx]
+    pk = pk[idx]
+    dk = dk[idx]
+
+    taurosk = taurosk[idx]
+    tau200k = tau200k[idx]
+
+    np.savetxt('./atms/' + str(np.max(dpns) + 1) + '_orig/atm.' + str(k), \
+               np.column_stack([zk, Tk, pk, dk]), \
+               fmt = ('%6.1f', '%7.1f', '%7.5e', '%7.5e'), delimiter = '  ')
+
+    np.savetxt('./taugrids/' + str(np.max(dpns) + 1) + '_orig/taugrid.' + str(k), \
+               np.column_stack([zk, taurosk, tau200k, Tk]), \
+               fmt = ('%11.6f', '%7.5e', '%7.5e', '%12.6f'), delimiter = '  ')
+
+# interpolation of the original atmosphere onto the regularized tau grid
+#-----------------------------------------------------------------------
+
+    itrp = np.where(taul >= 0.1)
+
+    tauli = taul[itrp]
+
+    itrpl = np.where(taurosk >= 0.1)
+    itrpr = np.where(taurosk < 0.1)
+
+    zkl = zk[itrpl]
+    zkr = zk[itrpr]
+    Tkl = Tk[itrpl]
+    Tkr = Tk[itrpr]
+    pkl = pk[itrpl]
+    pkr = pk[itrpr]
+    dkl = dk[itrpl]
+    dkr = dk[itrpr]
+
+    tauroskl = taurosk[itrpl]
+    tauroskr = taurosk[itrpr]
+
+    tau200kl = tau200k[itrpl]
+    tau200kr = tau200k[itrpr]
+
+    while (tauli[0] < tauroskl[0]):
+
+        tauli = np.delete(tauli, 0)
+
+    while (tauli[len(tauli) - 1] > tauroskl[len(tauroskl) - 1]):
+
+        tauli = np.delete(tauli, len(tauli) - 1)
+
+    zki = interpolate.interp1d(tauroskl, zkl)(tauli)
+    Tki = interpolate.interp1d(tauroskl, Tkl)(tauli)
+    pki = interpolate.interp1d(tauroskl, pkl)(tauli)
+    dki = interpolate.interp1d(tauroskl, dkl)(tauli)
+
+    tau200ki = interpolate.interp1d(tauroskl, tau200kl)(tauli)
+
+    zk = np.concatenate((zkr, zki))
+    Tk = np.concatenate((Tkr, Tki))
+    pk = np.concatenate((pkr, pki))
+    dk = np.concatenate((dkr, dki))
+
+    taurosk = np.concatenate((tauroskr, tauli))
+    tau200k = np.concatenate((tau200kr, tau200ki))
+#-----------------------------------------------------------------------
 
     np.savetxt('./atms/' + str(np.max(dpns) + 1) + '/atm.' + str(k), \
-               np.column_stack([zk, Tk[idx], pk[idx], dk[idx]]), \
+               np.column_stack([zk - np.min(zk), Tk, pk, dk]), \
                fmt = ('%6.1f', '%7.1f', '%7.5e', '%7.5e'), delimiter = '  ')
 
     np.savetxt('./taugrids/' + str(np.max(dpns) + 1) + '/taugrid.' + str(k), \
-               np.column_stack([zk, taurosk[idx], tau200k[idx], Tk[idx]]), \
+               np.column_stack([zk, taurosk, tau200k, Tk]), \
                fmt = ('%11.6f', '%7.5e', '%7.5e', '%12.6f'), delimiter = '  ')
 
     k += 1

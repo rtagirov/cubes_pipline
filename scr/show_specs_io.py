@@ -48,8 +48,8 @@ snapshot = str(int(np.loadtxt('snapshot.inp')))
 #dpn = [10, 9, 8, 7, 6, 1, 2, 3, 4, 5, 0]
 #dpn = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 #dpn = [6, 5, 4, 3, 2, 1, 0]
-#dpn = [0, 1, 2, 3, 4, 5, 6, 7]
-dpn = [0, 1, 2, 3, 4, 5, 6]
+dpn = [0, 1, 2, 3, 4, 5, 6, 7]
+#dpn = [0, 1, 2, 3, 4, 5, 6]
 
 #sys.exit()
 
@@ -179,10 +179,10 @@ if len(sys.argv) < 2:
 
     sys.exit()
 
-if sys.argv[1] == 'o': labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
+#if sys.argv[1] == 'o': labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
+if sys.argv[1] == 'o': labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)', '-10.0 (6)']
 if sys.argv[1] == 'i': labels = ['1.1 (0)',  '1.2 (1)',  '1.3 (2)',  '1.4 (3)',  '1.5 (4)',  '1.6 (5)']
 if sys.argv[1] == 's': labels = ['0.20 (67)', '0.18 (73)', '0.16 (81)', '0.14 (91)', '0.12 (105)', '0.10 (124)']
-#if sys.argv[1] == 's': labels = ['0.100 (124)', '0.095 (129)', '0.090 (136)', '0.085 (143)', '0.080 (152)', '0.075 (161)']
 
 lbls = []
 
@@ -209,10 +209,8 @@ for i in range(len(dpn) - 1):
     ax[0].fill_between(np.arange(len(atn)), ave[2, i, :], ave[2, i, :] + std[2, i, :], label = label0)
     ax[0].fill_between(np.arange(len(atn)), ave[2, i, :], mde[2, i, :], alpha = 0.5)
 
-    ax[0].axhline(y = np.mean(ave[2, i, :]), color = 'k', linewidth = 2.5)
-    ax[0].axhline(y = np.mean(ave[2, i, :]) + np.std(ave[2, i, :]), linestyle = '--', color = 'k', linewidth = 2.5)
-
-    ax[0].grid(which = 'both', axis = 'y')
+    ax[0].axhline(y = np.mean(ave[2, i, :]), color = 'k', linewidth = 0.5)
+    ax[0].axhline(y = np.mean(ave[2, i, :]) + np.std(ave[2, i, :]), linestyle = '--', color = 'k', linewidth = 0.5)
 
     n1 = str(np.max(ave[1, i, :]))[:8]
     n2 = str(np.max(mde[1, i, :]))[:8]
@@ -227,10 +225,8 @@ for i in range(len(dpn) - 1):
     ax[1].fill_between(np.arange(len(atn)), ave[1, i, :], ave[1, i, :] + std[1, i, :], label = label1)
     ax[1].fill_between(np.arange(len(atn)), ave[1, i, :], mde[1, i, :], alpha = 0.5)
 
-    ax[1].axhline(y = np.mean(ave[1, i, :]), color = 'k', linewidth = 2.5)
-    ax[1].axhline(y = np.mean(ave[1, i, :]) + np.std(ave[1, i, :]), linestyle = '--', color = 'k', linewidth = 2.5)
-
-    ax[1].grid(which = 'both', axis = 'y')
+    ax[1].axhline(y = np.mean(ave[1, i, :]), color = 'k', linewidth = 0.5)
+    ax[1].axhline(y = np.mean(ave[1, i, :]) + np.std(ave[1, i, :]), linestyle = '--', color = 'k', linewidth = 0.5)
 
     ax[0].set_xlabel('Atmosphere number')
     ax[1].set_xlabel('Atmosphere number')
@@ -270,12 +266,12 @@ os.system('pdftk ' + s + 'output ' + 'devs.pdf')
 
 #sys.exit()
 
-#col = ['magenta', 'blue', 'orange', 'green', 'red', 'purple', 'cyan']
-col = ['magenta', 'blue', 'orange', 'purple', 'red', 'green']
+col = ['magenta', 'blue', 'orange', 'green', 'red', 'purple', 'pink']
+#col = ['magenta', 'blue', 'orange', 'purple', 'red', 'green']
 
 #wid = [1, 2, 3, 4, 5]
-#wid = [7, 6, 5, 4, 3, 2, 1]
-wid = [7, 6, 5, 4, 3, 2]
+wid = [7, 6, 5, 4, 3, 2, 1]
+#wid = [7, 6, 5, 4, 3, 2]
 #wid = [1, 2, 3, 4, 5, 6]
 
 for j in range(len(atn)):
@@ -313,31 +309,31 @@ for j in range(len(atn)):
 #    ax[1].xaxis.set_minor_locator(AutoMinorLocator(10))
 #    ax[1].xaxis.set_major_locator(MultipleLocator(10))
 
-    ax[0].fill_between(w, 0.85, 1.15, color = 'gray', alpha=0.4)
+    ax[0].fill_between(w, 0.80, 1.20, color = 'gray', alpha=0.2)
     ax[0].fill_between(w, 0.90, 1.10, color = 'gray', alpha=0.6)
-    ax[0].fill_between(w, 0.95, 1.05, color = 'gray', alpha=0.8)
 
-    x, tau_orig, x, T_orig = np.loadtxt('./taugrids/7/taugrid.' + str(atn[j]), unpack = True)
+    x, tau_orig, x, T_orig = np.loadtxt('./taugrids/7_orig/taugrid.' + str(atn[j]), unpack = True)
 
     for i in range(len(dpn)):
 
 #        x, T, x, x = np.loadtxt('./atms/' + str(dpn[i]) + '/atm.' + str(atn[j]), unpack = True)
 
-        z, logtau, tau, T = np.loadtxt('./taugrids/' + str(dpn[i]) + '/taugrid.' + str(atn[j]), unpack = True)
+        if dpn[i] <= 6: z, logtau, tau, T = np.loadtxt('./taugrids/' + str(dpn[i]) + '/taugrid.' + str(atn[j]), unpack = True)
+        if dpn[i] == 7: z, tau, tau200, T = np.loadtxt('./taugrids/' + str(dpn[i]) + '/taugrid.' + str(atn[j]), unpack = True)
 
 #        tau = np.loadtxt('./header/tau.out.' + str(dpn[i]))
 
         ratio = I[i, j, :] / I[len(dpn) - 1, j, :]
 #        ratio = I[i, j, :] / I[0, j, :]
 
-#        if dpn[i] == 7:
-        if dpn[i] == 6:
+        if dpn[i] == 7:
+#        if dpn[i] == 6:
 
             ax[0].plot(w, ratio, color = 'k', linestyle = '--')
 #            ax[1].plot(w, ratio, color = 'k', linestyle = '--')
 
-#        if dpn[i] >= 0 and dpn[i] <= 6:
-        if dpn[i] >= 0 and dpn[i] <= 5:
+        if dpn[i] >= 0 and dpn[i] <= 6:
+#        if dpn[i] >= 0 and dpn[i] <= 5:
 
             ax[0].plot(w, ratio, label = labels[i], color = col[i], linewidth = wid[i])
 
@@ -345,20 +341,20 @@ for j in range(len(atn)):
 
 #            ax[0].plot(w, ratio, label = labels[dpn[i] - 1], color = col[dpn[i] - 6], linewidth = wid[dpn[i] - 6])
 
-#        if dpn[i] == 7:                 ax[1].plot(tau, T, color = 'k')
-        if dpn[i] == 6:
+        if dpn[i] == 7:
+#        if dpn[i] == 6:
 
-            if sys.argv[1] == 'o': ax[1].scatter(tau, T, color = 'k', s = 2, label = '-10 (6)')
+#            if sys.argv[1] == 'o': ax[1].scatter(tau, T, color = 'k', s = 2, label = '-10 (6)')
+            if sys.argv[1] == 'o': ax[1].scatter(tau, T, color = 'k', s = 2, label = '-10 (intrp base)')
             if sys.argv[1] == 'i': ax[1].scatter(tau, T, color = 'k', s = 2, label = '2.0 (6)')
             if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.08 (152)')
-#            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.07 (172)')
 
             ax[1].scatter(tau_orig, T_orig + 1000, color = 'cyan', s = 2, label = 'Original')
-#        if dpn[i] >= 0 and dpn[i] <= 6: ax[1].plot(tau, T - (7 - dpn[i]) * 500, color = col[i])
-        if dpn[i] >= 0 and dpn[i] <= 5:
 
-            ax[1].scatter(tau, T - (6 - dpn[i]) * 1000, color = col[i], s = 2, label = labels[i])
-#        if dpn[i] > 5:                  ax[2].plot(tau, T + (dpn[i] - 5) * 500, color = col[dpn[i] - 6])
+        if dpn[i] >= 0 and dpn[i] <= 6:
+#        if dpn[i] >= 0 and dpn[i] <= 5:
+
+            ax[1].scatter(tau, T - (7 - dpn[i]) * 1000, color = col[i], s = 2, label = labels[i])
 
     ax[1].set_xlim(110.0, 1e-15)
 

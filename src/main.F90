@@ -712,7 +712,7 @@
 !---- the if structure is as follows, since if tau200 is set, then gettaug can not be set. But rotation and tau200 can be set simulaneously. For gettau the end array will always be in the nx, ny, ngrid with and without rotation
 
 
-    print*, ' Finished all claculations let us write stuff out!' 
+    print*, ' Finished all calculations let us write stuff out!' 
  
      if (gettaug) then 
 
@@ -723,7 +723,7 @@
        filename='Header_mu_'//trim(numberx)//'.'//trim(filenumber)//'.'//trim(no)
        open (unit = 1, file= filename, form='formatted')
        write (1,*) ' tau-grid points, start lgtau, step, finish lgtau,  Nx, Ny, dx,  dy' 
-       write(1, '(i3,2x,f16.8,2x,es10.3,2x,f16.8,2x,2(i3,2x),2(f16.8))') &
+       write(1, '(i3,2x,f16.8,2x,es10.3,2x,f16.8,2x,2(i3,2x),2(f16.8,2x))') &
                 Ngrid,  tau1lg,   step,    tau2lg,   Nx, Ny,   dx, dy 
        close(unit=1)
 
