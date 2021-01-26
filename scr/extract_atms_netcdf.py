@@ -28,6 +28,7 @@ r2 = random.sample(range(512), int(sys.argv[1]))
 #sys.exit()
 
 dpns = np.arange(0, 7)
+#dpns = np.arange(0, 1)
 
 for n in tqdm(dpns):
 

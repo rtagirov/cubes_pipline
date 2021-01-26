@@ -55,10 +55,10 @@
   real(kind = 8) :: maxim1, maxim2, maxim3
   real(kind = 8) :: minim1, minim2, minim3
 
-!       filename='result_0.120000.fits'
-!       folder='/scratch/yeo/SATIRE3D/D000/snapshots/'
-!    read(*,*) folder
-!    read(*,*) filenumber
+  integer :: nunit
+
+!---------------------------------------------------------------
+
     sizee = 1
     myrank = 0  
 
@@ -602,106 +602,55 @@
 
        close(unit=2)
 
-!-----  finished reading it. 
+!-----  finished reading it.
 
-       open(unit = 1845, file = 'tau.log.'//trim(no))
+       nunit = 1845
+
+       open(unit = nunit, file = 'tau.log.'//trim(no))
 
        do i = 1, Nx
           do k = 1, Ny
             do j = 1, Nzcut
 
-             tempt(j) = T(i,k, j)
-             tempp(j) = P(i,k, j)
-             tempr(j) = rho(i,k,j)
+               tempt(j) = T(i,k, j)
+               tempp(j) = P(i,k, j)
+               tempr(j) = rho(i,k,j)
 !    get kappa* rho
-             kappa(j) = introssk(tempt(j), tempp(j))
-             kappa(j) = kappa(j)* tempr(j)
+               kappa(j) = introssk(tempt(j), tempp(j))
+               kappa(j) = kappa(j)* tempr(j)
 
             end do
 
 ! inegrate to get tau
-         call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
+            call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
 !    
-         tau(i, k, 1:Nzcut) = taut(1:Nzcut)
-         taut(1:Nzcut) = taur(i,k,1:Nzcut)
+            tau(i, k, 1:Nzcut) = taut(1:Nzcut)
+            taut(1:Nzcut) = taur(i,k,1:Nzcut)
 
-         tempa = 0.0d0
+            call optimal_ray_top(i, k, Ngrid, 4, nunit)
 
-!    before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
-         if (taut(3) .lt. taugrid(1)) then
+            tempa = 0.0d0
 
-          ! here the top has smaller tau ross than top of the grid, need to find out how many points and make an
-          ! additional chunk of the tau grid.
-            ccount = 4
+!           now interpolate
+            indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
+            outT(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-            do while (taut(ccount) .lt. taugrid(1))
-              ccount = ccount + 1
-            end do 
+            indum = map1(taut, tempp, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
+            outP(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.2
-            if (tau(i, k, ccount - 1) .gt. 0.2) then
+            indum = map1(taut, tempr, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
+            outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-               if (ccount .le. 10) then
+            indum = map1(taut, zgrid, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
+            outz(i,k,1:Ngrid) = tempa(1:Ngrid)
 
-!                  ttaugrid(i, k, 1 : ccount - 1) = taut(1 : ccount - 1)
-                  ttaugrid(i, k, 1 : ccount - 2) = taut(2 : ccount - 1) ! tau(1 : count - 1) -> tau(2 : count - 1)
-!                  ttaugrid(i, k, ccount : Ngrid) = taugrid(1 : Ngrid - ccount + 1)
-                  ttaugrid(i, k, ccount - 1 : Ngrid) = taugrid(1 : Ngrid - ccount + 2)
-
-                  write(1845, '(3(I3,2x),A)') i, k, 1, 'count <= 10'
-
-               else
-
-                  n_add = 4
-
-                  step_add = (tau1lg - dlog10(taut(2))) / n_add ! tau(1) -> tau(2), n_add change
-
-                  do ti = 1, n_add
-                     ttaugrid(i, k, ti) = 10.0**(tau1lg - (n_add + 1 - ti) * step_add)
-                  enddo
-
-                  ttaugrid(i, k, n_add + 1 : Ngrid) = taugrid(1 : Ngrid - n_add)
-
-                  write(1845, '(3(I3,2x),A)') i, k, 2, 'count > 10'
-
-               endif
-
-            else
-
-               ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
-
-               write(1845, '(3(I3,2x),A)') i, k, 3, 'tau200 <= 0.2'
-
-            endif
-
-         else
-
-            ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
-
-            write(1845, '(3(I3,2x),A)') i, k, 4, 'extrap'
-
-         end if
-
-           ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(i, k, 1 : Ngrid)
-
-!          now interpolate
-           indum = map1(taut, tempt, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
-           outT(i,k,1:Ngrid) = tempa(1:Ngrid)
-
-           indum = map1(taut, tempp, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
-           outP(i,k,1:Ngrid) = tempa(1:Ngrid)
-
-           indum = map1(taut, tempr, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
-           outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
-
-           indum = map1(taut, zgrid, Nzcut, ttaugrid(i, k, :), tempa, Ngrid)
-           outz(i,k,1:Ngrid) = tempa(1:Ngrid)
+            ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(i, k, 1 : Ngrid)
 
           end do  
        end do 
      endif 
 
-     close(unit = 1845)
+     close(unit = nunit)
 
    endif 
 
@@ -1040,8 +989,78 @@
 !
       end
 
+! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine optimal_ray_top(i, k, ngrid, n_add, nunit)
 
+      use arrays
 
+      integer, intent(in) :: i, k
+
+      integer, intent(in) :: ngrid, n_add
+
+      integer, intent(in) :: nunit
+
+      integer :: ccount, ti
+
+      real*8 :: step_add, tau1lg
+
+!     before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
+      if (taut(3) .lt. taugrid(1)) then
+
+         ! here the top has smaller tau ross than top of the grid, need to find out how many points and make an
+         ! additional chunk of the tau grid.
+         ccount = 4
+
+         do while (taut(ccount) .lt. taugrid(1))
+            ccount = ccount + 1
+         end do 
+
+         ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.2
+         if (tau(i, k, ccount - 1) .gt. 0.2) then
+
+            if (ccount .le. 10) then
+
+               ttaugrid(i, k, 1 : ccount - 2) = taut(2 : ccount - 1) ! tau(1 : count - 1) -> tau(2 : count - 1)
+
+               ttaugrid(i, k, ccount - 1 : Ngrid) = taugrid(1 : Ngrid - ccount + 2)
+
+               write(nunit, '(3(I3,2x),A)') i, k, 1, 'count <= 10'
+
+            else
+
+!               n_add = 4
+
+               tau1lg = dlog10(taugrid(1))
+
+               step_add = (tau1lg - dlog10(taut(2))) / n_add ! tau(1) -> tau(2), n_add change
+
+               do ti = 1, n_add
+                  ttaugrid(i, k, ti) = 10.0**(tau1lg - (n_add + 1 - ti) * step_add)
+               enddo
+
+               ttaugrid(i, k, n_add + 1 : Ngrid) = taugrid(1 : Ngrid - n_add)
+
+               write(nunit, '(3(I3,2x),A)') i, k, 2, 'count > 10'
+
+            endif
+
+         else
+
+            ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
+
+            write(nunit, '(3(I3,2x),A)') i, k, 3, 'tau200 <= 0.2'
+
+         endif
+
+      else
+
+         ttaugrid(i, k, 1 : Ngrid) = taugrid(1 : Ngrid)
+
+         write(nunit, '(3(I3,2x),A)') i, k, 4, 'extrap'
+
+      end if
+
+      end
 
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
