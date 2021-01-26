@@ -77,7 +77,12 @@ for n in tqdm(dpns):
 
         idxl = []
 
-        for m in range(lidx, lidx - 10, -1):
+        ntop = 10
+#        nres = 30
+        nres = 0
+
+#        for m in range(lidx, lidx - 10, -1):
+        for m in range(lidx, lidx - ntop - nres, -1):
 
             delta = logtauk[m] - logtauk[m - 1]
 
