@@ -14,37 +14,22 @@ from tqdm import tqdm
 
 snapshot = str(int(np.loadtxt('snapshot.inp')))
 
-#if len(sys.argv) < 2: sys.exit()
+if len(sys.argv) < 2: sys.exit()
 
-#r1 = random.sample(range(512), int(sys.argv[1]))
-#r2 = random.sample(range(512), int(sys.argv[1]))
+r1 = random.sample(range(512), int(sys.argv[1]))
+r2 = random.sample(range(512), int(sys.argv[1]))
 
 #np.savetxt('r1r2.out', \
 #           np.column_stack([np.array(r1), np.array(r2)]), \
 #           fmt = ('%3i', '%3i'), delimiter = '  ')
 
-r1, r2 = np.loadtxt('r1r2.out', unpack = True).astype(int)
-
-#print(r1)
-#print(r2)
+#r1, r2 = np.loadtxt('r1r2.out', unpack = True).astype(int)
 
 #sys.exit()
 
-#r1 = [439, 241, 395, 237, 205]
-#r2 = [197, 418, 495, 327, 46]
-
-#dpns = [30, 40, 50, 60, 70, 80, 82, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210]
-#dpns = [30]
-#dpns = [40, 50, 60, 70, 80, 82, 90, 120]
-#dpns = [40, 50, 60, 70, 80, 90, 120]
-#dpns = np.arange(0, 10)
-#dpns = np.arange(0, 7)
-dpns = np.arange(0, 1)
-#dpns = np.arange(0, 6)
-#dpns = np.arange(0, 1)
+dpns = np.arange(0, 7)
 
 for n in tqdm(dpns):
-#for n in dpns:
 
     z = netCDF4.Dataset('./nc/Z_onTau.'   + snapshot + '.nc' + '.' + str(n))['Z']
     T = netCDF4.Dataset('./nc/T_onTau.'   + snapshot + '.nc' + '.' + str(n))['T']
@@ -52,14 +37,6 @@ for n in tqdm(dpns):
     d = netCDF4.Dataset('./nc/rho_onTau.' + snapshot + '.nc' + '.' + str(n))['R']
 
     tau = netCDF4.Dataset('./nc/taugrid.' + snapshot + '.nc' + '.' + str(n))['tau'] 
-#    z = netCDF4.Dataset('./nc/Z_onTau.'   + snapshot + '.' + str(n) + '.nc')['Z']
-#    T = netCDF4.Dataset('./nc/T_onTau.'   + snapshot + '.' + str(n) + '.nc')['T']
-#    p = netCDF4.Dataset('./nc/P_onTau.'   + snapshot + '.' + str(n) + '.nc')['P']
-#    d = netCDF4.Dataset('./nc/rho_onTau.' + snapshot + '.' + str(n) + '.nc')['R']
-#    z = netCDF4.Dataset('./nc/Z_onTau.'   + snapshot + '.nc')['Z']
-#    T = netCDF4.Dataset('./nc/T_onTau.'   + snapshot + '.nc')['T']
-#    p = netCDF4.Dataset('./nc/P_onTau.'   + snapshot + '.nc')['P']
-#    d = netCDF4.Dataset('./nc/rho_onTau.' + snapshot + '.nc')['R']
 
     z = np.array(z) / 1e+5
     T = np.array(T)
@@ -199,8 +176,8 @@ for i, j in itertools.product(r1, r2):
     taurosk = tauros[1 :, j, i]
     tau200k = tau200[1 :, j, i]
 
-#    idx = np.where(taurosk <= 150.0)[0]
-    idx = np.where(z >= 2100)[0]
+    idx = np.where(taurosk <= 150.0)[0]
+#    idx = np.where(z >= 2100)[0]
 #    idx = np.where(taurosk <= 1e+30)[0]
 
     zk = z[idx]

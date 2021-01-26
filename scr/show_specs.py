@@ -17,6 +17,10 @@ import sys
 from matplotlib.ticker import AutoMinorLocator
 from matplotlib.ticker import MultipleLocator
 
+def num_lines(f):
+
+    return sum(1 for line in open(f))
+
 def mean_within_delta(wvl, flu, delta, message = 'Averaging'):
 
     wvl_min = wvl[0]
@@ -173,6 +177,24 @@ f2 = open('means_208_' + delta, 'w')
 #labels = ['-9.5', '-9.0', '-8.5', '-8.0', '-7.5', '-7.0']
 #labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)', '-10.0 (6)']
 
+#nodp = np.zeros((len(dpn), len(atn)))
+nodp = np.zeros(len(dpn))
+
+#anodp = np.zeros(len(dpn))
+
+for i in range(len(nodp)):
+
+    for j in range(len(atn)):
+
+#        nodp[i, j] = num_lines('./atms/' + str(i) + '/atm.' + str(atn[j]))
+        nodp[i] += num_lines('./atms/' + str(i) + '/atm.' + str(atn[j])) / len(atn)
+
+nodp = np.round(nodp).astype(int)
+
+nodps = []
+
+for i in range(len(nodp)): nodps.append(' (' + str(nodp[i]) + ')')
+
 if len(sys.argv) < 2:
 
     print('Inner/outer boundary or step?')
@@ -181,7 +203,7 @@ if len(sys.argv) < 2:
 
 if sys.argv[1] == 'o': labels = ['-7.0 (0)', '-7.5 (1)', '-8.0 (2)', '-8.5 (3)', '-9.0 (4)', '-9.5 (5)']
 if sys.argv[1] == 'i': labels = ['1.1 (0)',  '1.2 (1)',  '1.3 (2)',  '1.4 (3)',  '1.5 (4)',  '1.6 (5)']
-if sys.argv[1] == 's': labels = ['0.20 (67)', '0.18 (73)', '0.16 (81)', '0.14 (91)', '0.12 (105)', '0.10 (124)']
+if sys.argv[1] == 's': labels = ['0.20' + nodps[0], '0.18' + nodps[1], '0.16' + nodps[2], '0.14' + nodps[3], '0.12' + nodps[4], '0.10' + nodps[5]]
 #if sys.argv[1] == 's': labels = ['0.100 (124)', '0.095 (129)', '0.090 (136)', '0.085 (143)', '0.080 (152)', '0.075 (161)']
 
 lbls = []
@@ -350,7 +372,7 @@ for j in range(len(atn)):
 
             if sys.argv[1] == 'o': ax[1].scatter(tau, T, color = 'k', s = 2, label = '-10 (6)')
             if sys.argv[1] == 'i': ax[1].scatter(tau, T, color = 'k', s = 2, label = '2.0 (6)')
-            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.08 (152)')
+            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.08' + nodps[6])
 #            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.07 (172)')
 
             ax[1].scatter(tau_orig, T_orig + 1000, color = 'cyan', s = 2, label = 'Original')
