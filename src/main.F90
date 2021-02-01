@@ -43,7 +43,18 @@
   parameter( Ngridmax = 128)
    
   real(kind=8) maxz, tau1lg, step, tau2lg, step_add
+
+! --- for optimal ray top and resolving spikes and jumps
+
+  integer :: ntop, nres, nadd, n_add
+
+  integer :: nppi, npto, nap, n_inset_steps, flag, nap_tot, idx1, idx2
+
+  character (len = 3) :: mode
  
+  real*8 :: inset_step, threshold
+
+  real*8, allocatable :: inset(:)
   
 !--- functions -----------------------------------------------!  
   real(kind=8) introssk
@@ -55,7 +66,7 @@
   real(kind = 8) :: maxim1, maxim2, maxim3
   real(kind = 8) :: minim1, minim2, minim3
 
-  integer :: nunit
+  integer :: toplogunit, reslogunit
 
 !---------------------------------------------------------------
 
@@ -70,10 +81,8 @@
 
     if (gettaug) then
 
-     n_res_half = 4
-
      ntop = 10
-     nres = 3 * 2 * n_res_half
+     nres = 100
 
      nadd = ntop + nres ! additional points for the top plus points for the spikes and jumps
 
@@ -607,9 +616,8 @@
 
 !-----  finished reading it.
 
-       nunit = 1845
-
-       open(unit = nunit, file = 'tau.log.'//trim(no))
+       toplogunit = 1845; open(unit = toplogunit, file = 'tau.top.log.'//trim(no))
+       reslogunit = 1846; open(unit = reslogunit, file = 'tau.res.log.'//trim(no))
 
        do i = 1, Nx
           do k = 1, Ny
@@ -631,59 +639,85 @@
             tau(i, k, 1 : Nzcut) = taut(1 : Nzcut)
             taut(1 : Nzcut) = taur(i, k ,1 : Nzcut)
 
-            call optimal_ray_top(i, k, Ngrid, 4, nunit)
+            n_add = 4
 
-            tempa = 0.0d0
+            call optimal_ray_top(i, k, Ngrid, n_add, toplogunit)
 
             flag = 1
 
-            num_features = 0
+            nap_tot = 0
 
-            do while (flag == 1 .and. num_features <= 2)
+            do while (flag == 1 .and. nap_tot < nres)
+
+               tempa = 0.0d0
 
 !              interpolate
                indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
 
                outT(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
 
+!               do j = 1, ngrid
+!               print*, 'check ray: ', ttaugrid(j), tempa(j)
+!               enddo
+
 !              find the indices of the taut grid onto which to interpolate back
-               call find_intrp_idxs(taut, ttaugrid(1), ttaugrid(Ngrid), idx1, idx2)
+!               call find_intrp_idxs(taut, ttaugrid(1), ttaugrid(Ngrid), idx1, idx2)
 
-               nii = idx2 - idx1 + 1
+!               nii = idx2 - idx1 + 1
 
-               allocate(Tii(nii))
+!               allocate(Tii(nii))
 
 !              interpolate back
-               indum = map1(ttaugrid, outT(i, k, :), ngrid, taut(idx1 : idx2), Tii, nii)
+!               indum = map1(ttaugrid, outT(i, k, :), ngrid, taut(idx1 : idx2), Tii, nii)
 
-!              compare the two arrays
-               idxd = locate_dev(tempt(idx1 : idx2), Tii, nii)
+!               mode = 'reg'
+               mode = 'pnt'
 
-               if (idxd /= 0) then
+               threshold = 100.0d0
 
-                  n_resolved = 2 * n_res_half + 1
+               call locate_deviation(mode, threshold, tempa, Ngrid, idx1, idx2)
 
-                  n_steps = n_resolved + 1
-
-                  step_res = (dlog10(ttaugrid(idxd - 1)) - dlog10(ttaugrid(idxd + 1))) / n_steps
-
-                  do j = 1, n_resolved
-
-                     taugrid_res_mid(j) = 10.0**(dlog10(ttaugrid(idxd - 1)) + j * step_res)
- 
-                  enddo
-
-                  taugrid_res(1 : idxd - 1) = ttaugrid(1 : idxd - 1)
-
-                  taugrid_res(idxd : idxd + n_resolved - 1) = taugrid_res_mid(1 : n_resolved)
-
-                  taugrid_res(idxd + n_resolved : Ngrid) = ttaugrid(idxd + 1 : Ngrid - n_resolved + 1)
-
-                  ttaugrid = taugrid_res
+               if (idx1 /= idx2) then
 
                   flag = 1
 
-                  num_features = num_features + 1
+!                 number of point put in
+                  if (mode .eq. 'reg') nppi = 20
+                  if (mode .eq. 'pnt') nppi = 1
+
+                  npto = idx2 - idx1 - 1 ! number of points taken out
+
+                  write(*, '(a,5(2x,i3))'), 'nap: ', i, k, idx1, idx2, Ngrid
+
+!                  stop
+
+                  nap = nppi - npto ! number of added points
+
+                  n_inset_steps = nppi + 1
+
+                  inset_step = (dlog10(ttaugrid(idx1)) - dlog10(ttaugrid(idx2))) / n_inset_steps
+
+                  allocate(inset(nppi))
+
+                  do j = 1, nppi
+
+                     inset(j) = 10.0**(dlog10(ttaugrid(idx1)) + j * inset_step)
+ 
+                  enddo
+
+                  taugrid_res(1 : idx1) = ttaugrid(1 : idx1)
+
+                  taugrid_res(idx1 + 1 : idx1 + nppi) = inset(1 : nppi)
+
+                  taugrid_res(idx1 + nppi + 1 : Ngrid) = ttaugrid(idx2 : Ngrid - nap)
+
+                  ttaugrid = taugrid_res
+
+                  nap_tot = nap_tot + nap
+
+                  if (nap_tot > nres) print*, i, k, ' warning: nap_tot > nres'
+
+                  deallocate(inset)
 
                else
 
@@ -692,6 +726,10 @@
                endif
 
             enddo
+
+            write(reslogunit, '(3(I3,2x))') i, k, nap_tot
+
+            tempa = 0.0d0
 
 !           iterpolate the rest of the variables onto the final grid
             indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
@@ -713,7 +751,8 @@
        end do 
      endif 
 
-     close(unit = nunit)
+     close(unit = toplogunit)
+     close(unit = reslogunit)
 
    endif 
 
@@ -1057,6 +1096,8 @@
 
       use arrays
 
+      implicit none
+
       integer, intent(in) :: i, k
 
       integer, intent(in) :: ngrid, nadd
@@ -1125,6 +1166,86 @@
 
       end
 
+      subroutine locate_deviation(mode, threshold, a, n, i1, i2)
+
+      implicit none
+
+      character (len = 3), intent(in) :: mode
+
+      integer, intent(in) :: n
+
+      real*8, intent(in), dimension(n) :: a
+
+      real*8, intent(in) :: threshold
+
+      integer, intent(out) :: i1, i2
+
+      real*8, dimension(n) :: da
+
+      integer :: i
+
+      do i = 1, n - 1
+
+         da(i) = abs(a(i + 1) - a(i))
+
+!         print*, 'check_loc_dev', a(i), da(i)
+
+      enddo
+
+!      stop
+
+      da(n) = da(n - 1)
+
+      i1 = 0
+      i2 = 0
+
+      do i = 1, n - 1
+
+         if (da(i) >= threshold) then
+
+!            print*, 'lalala', da(i), threshold
+
+            i1 = i
+
+            exit
+
+         endif
+
+      enddo
+
+!      print*, 'check i1', i1
+
+!      stop
+
+      if (i1 == 0) return
+
+      if (mode == 'pnt') then
+
+         i2 = i1 + 1
+
+         return
+
+      endif
+
+      if (mode == 'reg') then
+
+         do i = i1, n - 1
+
+            if (da(i) < threshold) then
+
+               i2 = i
+
+               exit
+
+            endif
+
+         enddo
+
+         return
+
+      endif
+
+      end
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
  double precision function introssk( tv, pv)
