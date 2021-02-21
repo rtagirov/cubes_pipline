@@ -10,7 +10,7 @@
 ! nc routines can be potentially used in parallel:
   integer sizee, myrank
 !--- cube dimensions 
-  integer  Nzz, Ni, Nt, Nx, Ny, Nz, Nzcut 
+  integer  Nzz, Nt, Nx, Ny, Nz, Nzcut 
 ! -- additional for a second kappa table
   integer nump2, numt2
 
@@ -19,7 +19,7 @@
   character(len=2) no
 
 ! --- loop integers
-  integer i,j,k,m, ti 
+  integer i,j,k,m, tii
 
  
 !--- reading cube:
@@ -46,15 +46,26 @@
 
 ! --- for optimal ray top and resolving spikes and jumps
 
-  integer :: ntop, nres, nadd, n_add
+  integer :: ntop, nres, nadd, Ni
 
-  integer :: nppi, npto, nap, n_inset_steps, flag, nap_tot, idx1, idx2
+  integer, parameter :: n_add = 4
+
+  integer :: nppi, npto, nap, deviations, nap_tot
+
+  integer :: i1, i2, d1, d2, to, bo, ti, bi, idx1, idx2, dstart, disallow
+
+  integer :: ii, kk, Nr
 
   character (len = 3) :: mode
  
-  real*8 :: inset_step, threshold
+  real*8, parameter :: threshold = 2.0d0
 
-  real*8, allocatable :: inset(:)
+  real*8, allocatable :: Tiback(:), taut_cut(:), temp_cut(:)
+
+!  integer, allocatable(:) :: id1, id2
+  integer, dimension(20) :: id1, id2
+
+  real*8 :: r1, r2
   
 !--- functions -----------------------------------------------!  
   real(kind=8) introssk
@@ -66,7 +77,19 @@
   real(kind = 8) :: maxim1, maxim2, maxim3
   real(kind = 8) :: minim1, minim2, minim3
 
-  integer :: toplogunit, reslogunit
+  integer :: toplogunit, reslogunit, mod_count, ray_count
+
+  character(len = 1) :: mc
+
+  character(len = 4) :: rc
+
+  logical :: print_cond
+
+  data id1 /302, 206, 391, 166, 459, 353, 456, 289, 193, 328, &
+            461, 182, 439, 242, 32, 277, 147, 455, 203, 2/
+
+  data id2 /107, 28, 412, 301, 243, 320, 411, 420, 147, 488, &
+            334, 160, 467, 417, 365, 145, 101, 436, 175, 271 /
 
 !---------------------------------------------------------------
 
@@ -82,7 +105,7 @@
     if (gettaug) then
 
      ntop = 10
-     nres = 100
+     nres = 50
 
      nadd = ntop + nres ! additional points for the top plus points for the spikes and jumps
 
@@ -548,8 +571,8 @@
 
            else 
              step_add = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
-             do ti = 1,  9 
-               ttaugrid(ti) = 10.0**(tau1lg-(10-ti)*step_add )  
+             do tii = 1,  9 
+               ttaugrid(tii) = 10.0**(tau1lg-(10-tii)*step_add )  
              end do 
              ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
            endif 
@@ -619,8 +642,35 @@
        toplogunit = 1845; open(unit = toplogunit, file = 'tau.top.log.'//trim(no))
        reslogunit = 1846; open(unit = reslogunit, file = 'tau.res.log.'//trim(no))
 
+       Nr = 20
+
+!       allocate(r1(Nr))
+!       allocate(r2(Nr))
+
+!       call random_seed()
+
+!       do i = 1, Nr
+
+!          call random_number(r1)
+!          call random_number(r2)
+
+!          id1(i) = nint(511 * r1 + 1)
+!          id2(i) = nint(511 * r2 + 1)
+
+!       enddo
+
+       call system('mkdir -p ray')
+!       call system('rm ./ray/*')
+
+       ray_count = 1
+
        do i = 1, Nx
+!       do ii = 1, Nr
           do k = 1, Ny
+!          do kk = 1, Nr
+
+!            i = id1(ii)
+!            k = id2(kk)
 
             do j = 1, Nzcut
 
@@ -639,95 +689,195 @@
             tau(i, k, 1 : Nzcut) = taut(1 : Nzcut)
             taut(1 : Nzcut) = taur(i, k ,1 : Nzcut)
 
-            n_add = 4
-
             call optimal_ray_top(i, k, Ngrid, n_add, toplogunit)
 
-            flag = 1
+            deviations = 1
 
             nap_tot = 0
 
-            do while (flag == 1 .and. nap_tot < nres)
+!            idx1 = 105
+            idx1 = 67
+!            idx1 = id1(ii)
+!            idx2 = 67
+            idx2 = 105
+!            idx2 = id2(kk)
+
+!            print_cond = .true.
+            print_cond = .false.
+
+            dstart = 1
+
+            mod_count = 1
+
+            do while (deviations == 1 .and. nap_tot < nres)
 
                tempa = 0.0d0
 
 !              interpolate
                indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
 
-               outT(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
-
-!               do j = 1, ngrid
-!               print*, 'check ray: ', ttaugrid(j), tempa(j)
-!               enddo
-
 !              find the indices of the taut grid onto which to interpolate back
-!               call find_intrp_idxs(taut, ttaugrid(1), ttaugrid(Ngrid), idx1, idx2)
+               call find_range(0, taut, Nzcut, ttaugrid(1), ttaugrid(Ngrid), i1, i2)
 
-!               nii = idx2 - idx1 + 1
+               Ni = i2 - i1 + 1
 
-!               allocate(Tii(nii))
+!               print*, 'range: ', i1, i2
 
-!              interpolate back
-!               indum = map1(ttaugrid, outT(i, k, :), ngrid, taut(idx1 : idx2), Tii, nii)
+               allocate(Tiback(Ni))
 
-!               mode = 'reg'
-               mode = 'pnt'
+               allocate(taut_cut(Ni))
+               allocate(temp_cut(Ni))
 
-               threshold = 100.0d0
+               taut_cut = taut(i1 : i2)
+               temp_cut = tempt(i1 : i2)
 
-               call locate_deviation(mode, threshold, tempa, Ngrid, idx1, idx2)
+               if (i == idx1 .and. k == idx2 .and. print_cond) then
+!               if (i == idx1 .and. k == idx2 .and. print_cond .and. mod_count == 3) then
 
-               if (idx1 /= idx2) then
+!                  print*, 'ttaugrid', ttaugrid(1), ttaugrid(Ngrid)
 
-                  flag = 1
+!                  print*, 'taut_cut', taut_cut(1), taut_cut(Ni)
 
-!                 number of point put in
-                  if (mode .eq. 'reg') nppi = 20
-                  if (mode .eq. 'pnt') nppi = 1
+!                  do m = 1, Nzcut
 
-                  npto = idx2 - idx1 - 1 ! number of points taken out
+!                     print*, m, taut(m)
 
-                  write(*, '(a,5(2x,i3))'), 'nap: ', i, k, idx1, idx2, Ngrid
+!                  enddo
 
 !                  stop
 
-                  nap = nppi - npto ! number of added points
+                  call str(mod_count, mc)
+                  call str(ray_count, rc)
 
-                  n_inset_steps = nppi + 1
+                  open(unit = 1853, file = './ray/ray.orig.'//trim(adjustl(rc))//'.'//mc)
+                  open(unit = 1854, file = './ray/ray.itrp.'//trim(adjustl(rc))//'.'//mc)
 
-                  inset_step = (dlog10(ttaugrid(idx1)) - dlog10(ttaugrid(idx2))) / n_inset_steps
+                  do j = 1, Ni
 
-                  allocate(inset(nppi))
+                     write(1853, '(e15.7,2x,e15.7)') taut_cut(j), temp_cut(j)
 
-                  do j = 1, nppi
-
-                     inset(j) = 10.0**(dlog10(ttaugrid(idx1)) + j * inset_step)
- 
                   enddo
 
-                  taugrid_res(1 : idx1) = ttaugrid(1 : idx1)
+                  do j = 1, Ngrid
 
-                  taugrid_res(idx1 + 1 : idx1 + nppi) = inset(1 : nppi)
+                     write(1854, '(e15.7,2x,e15.7)') ttaugrid(j), tempa(j)
 
-                  taugrid_res(idx1 + nppi + 1 : Ngrid) = ttaugrid(idx2 : Ngrid - nap)
+                  enddo
 
-                  ttaugrid = taugrid_res
+                  close(unit = 1853)
+                  close(unit = 1854)
 
-                  nap_tot = nap_tot + nap
+!                  stop
+
+               endif
+!               print*, i, k, i1, i2
+
+!              interpolate back
+               indum = map1(ttaugrid, tempa, Ngrid, taut_cut, Tiback, Ni)
+
+               call find_deviation(dstart, threshold, temp_cut, Tiback, Ni, d1, d2)
+
+               if (i == idx1 .and. k == idx2 .and. print_cond) then
+
+                  call str(mod_count, mc)
+                  call str(ray_count, rc)
+
+                  open(unit = 1855, file = './ray/ray.back.'//trim(adjustl(rc))//'.'//mc)
+
+                  do j = 1, Ni
+
+                     write(1855, '(e15.7,2x,e15.7)') taut_cut(j), Tiback(j)
+
+                  enddo
+
+                  close(unit = 1855)
+
+                  print*, 'i1, d1, d2:', i1, d1, d2
+
+               endif
+
+!               if (d2 - d1 > 1) then
+               if (d2 /= d1) then
+
+                  deviations = 1
+
+                  to = i1 - 1 + d1 ! left boundary of the feature in taut (original tau grid)
+                  bo = i1 - 1 + d2 ! right boundary of the feature in taut (original tau grid)
+
+                  if (i == idx1 .and. k == idx2 .and. print_cond) then
+
+                     write(*, '(A,2(2x,I3),4(2x,e15.7))') 'to, bo:', to, bo, taut(to), taut(bo), taut_cut(d1), taut_cut(d2)
+
+                  endif
+
+!                 finds indices of the taugrid that encompass taut(to) and taut(bo) values
+                  call find_range(1, ttaugrid, Ngrid, taut(to), taut(bo), ti, bi)
+
+!                 li --- left boundary of the feature in taugrid (interpolation tau grid)
+!                 ri --- right boundary of the feature in taugrid (interpolation tau grid)
+
+                  nppi = bo - to + 1 ! number of points put in
+                  npto = bi - ti - 1 ! number of points taken out
+
+                  if (i == idx1 .and. k == idx2 .and. print_cond) then
+
+                     print*, 'ti, bi:', ti, bi
+
+                  endif
+
+                  disallow = 0
+
+                  nap = nppi - npto  ! number of added points
+
+!                  if (nap < 0 .or. d2 - d1 == 1) then 
+!                  if (nap < 0 .or. d2 - d1 < 4) then 
+                  if (nap < 0) then 
+
+                     disallow = 1
+
+                     dstart = d2 + 1
+
+                  endif
+
+                  if (i == idx1 .and. k == idx2 .and. print_cond) then
+
+                     write(*,'(A,4(2x,I4))') 'nap: ', nppi, npto, nap, disallow
+
+                  endif
+
+                  if (disallow /= 1) then
+
+                      taugrid_res(1 : ti) = ttaugrid(1 : ti)
+
+                      taugrid_res(ti + 1 : ti + 1 + nppi - 1) = taut(to : bo)
+
+                      taugrid_res(ti + 1 + nppi : Ngrid) = ttaugrid(bi : Ngrid - nap)
+
+                      ttaugrid = taugrid_res
+
+                      nap_tot = nap_tot + nap
+
+                  endif
 
                   if (nap_tot > nres) print*, i, k, ' warning: nap_tot > nres'
 
-                  deallocate(inset)
+                  mod_count = mod_count + 1
 
                else
 
-                  flag = 0
+                  deviations = 0
 
                endif
+
+               deallocate(Tiback)
+               deallocate(taut_cut)
+               deallocate(temp_cut)
 
             enddo
 
             write(reslogunit, '(3(I3,2x))') i, k, nap_tot
+
+!            if (i == idx1 .and. k == idx2 .and. print_cond) stop
 
             tempa = 0.0d0
 
@@ -747,6 +897,8 @@
 !           store ttaugrid as single precision
             ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(1 : Ngrid)
 
+            ray_count = ray_count + 1
+
           end do  
        end do 
      endif 
@@ -754,7 +906,9 @@
      close(unit = toplogunit)
      close(unit = reslogunit)
 
-   endif 
+   endif
+
+!   stop 'stop before printout'
 
 !-------------------------------------------------------------------------!
 
@@ -1166,44 +1320,63 @@
 
       end
 
-      subroutine locate_deviation(mode, threshold, a, n, i1, i2)
+      subroutine find_range(mode, grid, n, tb, bb, t_idx, b_idx)
 
       implicit none
 
-      character (len = 3), intent(in) :: mode
+      integer, intent(in) :: n, mode
 
-      integer, intent(in) :: n
+      real*8, dimension(n), intent(in) :: grid
 
-      real*8, intent(in), dimension(n) :: a
+      real*8, intent(in) :: tb, bb
+
+      integer, intent(out) :: t_idx, b_idx
+
+      real*8 :: t_boundary, b_boundary
+
+      if (mode == 0) then
+
+         t_boundary = max(grid(2), tb)
+         b_boundary = min(grid(n), bb)
+
+         t_idx = minloc(dabs(grid - t_boundary), dim = 1) + 1
+         b_idx = minloc(dabs(grid - b_boundary), dim = 1) - 1
+
+      endif
+
+      if (mode == 1) then
+
+         t_idx = minloc(dabs(grid - tb), dim = 1) - 1
+         b_idx = minloc(dabs(grid - bb), dim = 1) + 1
+
+      endif
+
+      end
+
+      subroutine find_deviation(istart, threshold, a1, a2, n, i1, i2)
+
+      implicit none
+
+      integer, intent(in) :: n, istart
+
+      real*8, intent(in), dimension(n) :: a1, a2
 
       real*8, intent(in) :: threshold
 
       integer, intent(out) :: i1, i2
 
-      real*8, dimension(n) :: da
-
       integer :: i
 
-      do i = 1, n - 1
+      real*8 :: rel_dev
 
-         da(i) = abs(a(i + 1) - a(i))
+      i1 = istart
+      i2 = istart
 
-!         print*, 'check_loc_dev', a(i), da(i)
+      do i = istart, n
 
-      enddo
+         rel_dev = dabs(a1(i) - a2(i)) * 100 / a1(i)
 
-!      stop
-
-      da(n) = da(n - 1)
-
-      i1 = 0
-      i2 = 0
-
-      do i = 1, n - 1
-
-         if (da(i) >= threshold) then
-
-!            print*, 'lalala', da(i), threshold
+         if (rel_dev >= threshold) then
 
             i1 = i
 
@@ -1213,37 +1386,25 @@
 
       enddo
 
-!      print*, 'check i1', i1
+      if (i1 == istart) return
 
-!      stop
+      i2 = i1
 
-      if (i1 == 0) return
+      do i = i1, n - 1
 
-      if (mode == 'pnt') then
+         rel_dev = dabs(a1(i) - a2(i)) * 100 / a1(i)
 
-         i2 = i1 + 1
+         if (rel_dev < threshold) then
 
-         return
+            i2 = i
 
-      endif
+            exit
 
-      if (mode == 'reg') then
+         endif
 
-         do i = i1, n - 1
+      enddo
 
-            if (da(i) < threshold) then
-
-               i2 = i
-
-               exit
-
-            endif
-
-         enddo
-
-         return
-
-      endif
+      return
 
       end
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

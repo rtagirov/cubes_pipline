@@ -14,10 +14,31 @@ from tqdm import tqdm
 
 snapshot = str(int(np.loadtxt('snapshot.inp')))
 
-if len(sys.argv) < 2: sys.exit()
+#if len(sys.argv) < 2: sys.exit()
 
-r1 = random.sample(range(512), int(sys.argv[1]))
-r2 = random.sample(range(512), int(sys.argv[1]))
+#r1 = random.sample(range(512), int(sys.argv[1]))
+#r2 = random.sample(range(512), int(sys.argv[1]))
+
+#rr1, rr2, x = np.loadtxt('./ray/tau.res.log.6', unpack = True)
+rr1 = np.loadtxt('atm.log', usecols = [0])
+rr2 = np.loadtxt('atm.log', usecols = [1])
+
+i1 = np.unique(rr1, return_index=True)[1]
+i2 = np.unique(rr2, return_index=True)[1]
+
+r1 = [int(rr1[index] - 1) for index in sorted(i1)]
+r2 = [int(rr2[index] - 1) for index in sorted(i2)]
+
+print(np.array(r1) + 1)
+print(np.array(r2) + 1)
+
+sys.exit()
+
+for i, j in itertools.product(r1, r2):
+
+    print(i, j)
+
+sys.exit()
 
 #np.savetxt('r1r2.out', \
 #           np.column_stack([np.array(r1), np.array(r2)]), \
@@ -54,7 +75,7 @@ for n in tqdm(dpns):
 
         pathlib.Path('./taugrids/' + str(n)).mkdir(parents=True, exist_ok=True)
 
-    taulog = np.loadtxt('./header/tau.log.' + str(n), usecols = [2]).reshape(512, 512).astype(int)
+    taulog = np.loadtxt('./header/tau.top.log.' + str(n), usecols = [2]).reshape(512, 512).astype(int)
 
     atmlog = open('./atms/' + str(n) + '/atm.log', 'w')
 
@@ -78,10 +99,8 @@ for n in tqdm(dpns):
         idxl = []
 
         ntop = 10
-#        nres = 30
-        nres = 0
+        nres = 50
 
-#        for m in range(lidx, lidx - 10, -1):
         for m in range(lidx, lidx - ntop - nres, -1):
 
             delta = logtauk[m] - logtauk[m - 1]
@@ -156,7 +175,7 @@ T = np.array(netCDF4.Dataset('./nc/T.'   + snapshot + '.nc')['T'])
 p = np.array(netCDF4.Dataset('./nc/P.'   + snapshot + '.nc')['P'])
 d = np.array(netCDF4.Dataset('./nc/rho.' + snapshot + '.nc')['R'])
 
-tauros = np.array(netCDF4.Dataset('./nc/tauross.' + snapshot + '.nc')['tau'])
+tauros = np.array(netCDF4.Dataset('./nc/tauross.' + snapshot + '.nc')['tau']).astype(np.float32)
 tau200 = np.array(netCDF4.Dataset('./nc/tau200.' + snapshot + '.nc')['tau'])
 
 dz = np.loadtxt('dims.inp')[3] / 1e+5
