@@ -29,16 +29,16 @@ i2 = np.unique(rr2, return_index=True)[1]
 r1 = [int(rr1[index] - 1) for index in sorted(i1)]
 r2 = [int(rr2[index] - 1) for index in sorted(i2)]
 
-print(np.array(r1) + 1)
-print(np.array(r2) + 1)
+#print(np.array(r1) + 1)
+#print(np.array(r2) + 1)
 
-sys.exit()
+#sys.exit()
 
-for i, j in itertools.product(r1, r2):
+#for i, j in itertools.product(r1, r2):
 
-    print(i, j)
+#    print(i, j)
 
-sys.exit()
+#sys.exit()
 
 #np.savetxt('r1r2.out', \
 #           np.column_stack([np.array(r1), np.array(r2)]), \
