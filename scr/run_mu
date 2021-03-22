@@ -1,0 +1,46 @@
+#!/bin/bash
+
+dirs=$(seq 1 9)
+
+mu=(1.0 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9)
+
+declare -i i
+
+i=0
+
+for d in $dirs; do
+
+    cd $d
+
+    rm -f tau.out.1 tau.top.log.1 *.nc.1 Header_*
+
+    cp /mnt/SSD/sim/cubes_pipline/src/cpline.exe ./
+
+    if [ $d != 1 ]; then
+
+        arg="4s/.*/"${mu[i]}"    # viewing angle mu/"
+
+        sed -i '3s/.*/1      # rotation on or off (1 or 0)/' INPUT
+        sed -i "$arg"                                        INPUT
+
+    else
+
+        sed -i '3s/.*/0      # rotation on or off (1 or 0)/' INPUT
+
+    fi
+
+    ./cpline.exe > cpline.out &
+
+    cd ..
+
+    i=i+1
+
+done
+
+#wait
+
+#for d in $dirs; do
+
+#    mv $d/tau.res.log.1 ./tau.res.log.1.$d
+
+#done

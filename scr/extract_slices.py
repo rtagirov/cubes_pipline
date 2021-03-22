@@ -15,12 +15,12 @@ from tqdm import tqdm
 
 snapshot = str(int(np.loadtxt('snapshot.inp')))
 
-z = netCDF4.Dataset('./nc/Z_onTau.'   + snapshot + '.nc' + '.1')['Z']
-T = netCDF4.Dataset('./nc/T_onTau.'   + snapshot + '.nc' + '.1')['T']
-p = netCDF4.Dataset('./nc/P_onTau.'   + snapshot + '.nc' + '.1')['P']
-d = netCDF4.Dataset('./nc/rho_onTau.' + snapshot + '.nc' + '.1')['R']
+z = netCDF4.Dataset('./Z_onTau.'   + snapshot + '.nc' + '.1')['Z']
+T = netCDF4.Dataset('./T_onTau.'   + snapshot + '.nc' + '.1')['T']
+p = netCDF4.Dataset('./P_onTau.'   + snapshot + '.nc' + '.1')['P']
+d = netCDF4.Dataset('./rho_onTau.' + snapshot + '.nc' + '.1')['R']
 
-tau = netCDF4.Dataset('./nc/taugrid.' + snapshot + '.nc' + '.1')['tau'] 
+tau = netCDF4.Dataset('./taugrid.' + snapshot + '.nc' + '.1')['tau'] 
 
 z = np.array(z) / 1e+5
 T = np.array(T)
@@ -66,13 +66,18 @@ for i in tqdm(range(0, 512)):
         idxl = []
 
         ntop = 10
-        nres = 50
+        nres = 500
 
         for m in range(lidx, lidx - ntop - nres, -1):
 
             delta = logtauk[m] - logtauk[m - 1]
 
-            if delta - 0.01 <= 1e-3: idxl.append(m)
+#            print(delta, np.isclose(delta, 0.0001), abs(delta - 0.0001))
+
+            if abs(delta - 0.0001) <= 1e-6: idxl.append(m)
+#            if np.isclose(delta, 0.0001, rtol = 1e-2, atol = 1e-6):
+
+#                idxl.append(m)
 
         zk = np.delete(zk, idxl)
         Tk = np.delete(Tk, idxl)

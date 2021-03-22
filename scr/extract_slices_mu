@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#dirs=$(seq 1 9)
+dirs='2 3 5 7 9'
+
+for d in $dirs; do
+
+    cd $d
+
+    rm -f ./atms/* nohup.out
+
+    nohup python extract_slices.py &
+
+    cd ..
+
+done
+
+wait
+
+mkdir -p atms
+
+#rm -rf ./atms/*
+
+for d in $dirs; do
+
+    mv ./$d/atms ./atms/$d
+
+done

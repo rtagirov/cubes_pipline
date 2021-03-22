@@ -93,7 +93,7 @@
     if (gettaug) then
 
      ntop = 10
-     nres = 50
+     nres = 500
 
      nadd = ntop + nres ! additional points for the top plus points for the spikes and jumps
 
@@ -476,7 +476,7 @@
     end do 
 
     do i = ngrid - nadd + 1, ngrid
-     taugrid(i) = taugrid(i - 1) + 0.01
+     taugrid(i) = taugrid(i - 1) + 0.0001
     enddo 
 
     taugrid=10**taugrid
@@ -486,6 +486,9 @@
     enddo
 
     close(unit = 1)
+
+    toplogunit = 1845; open(unit = toplogunit, file = 'tau.top.log.'//trim(no))
+    reslogunit = 1846; open(unit = reslogunit, file = 'tau.res.log.'//trim(no))
 
 !--- since after rotation our arrays are called differently, and I did not come up 
 !--- with an easier solution there are two possibilities: 
@@ -521,77 +524,57 @@
 
        close(unit=2)
 
- 
       print*, ' get temporary arrays, get tau Rosseland and interpolate'  
+
+      ray_count = 1
+
       do i = 1, Nx
         do k = 1, Ny
+
             do j = 1, Nzcut
 
-             tempt(j) = newT(i,k, j)
-             tempp(j) = newP(i,k, j)
-             tempr(j) = newrho(i,k, j)
-!    get kappa* rho
-             kappa(j) = introssk(tempt(j), tempp(j))
-             kappa(j) = kappa(j)* tempr(j)
+                tempt(j) = newT(i, k, j)
+                tempp(j) = newP(i, k, j)
+                tempr(j) = newrho(i, k, j)
+!               get kappa * rho
+                kappa(j) = introssk(tempt(j), tempp(j))
+                kappa(j) = kappa(j) * tempr(j)
 
             end do
 
-! inegrate to get tau
-         call integ(zgrid,kappa,taut,Nzcut,(kappa(1)*zgrid(1)))
+!           inegrate to get tau
+            call integ(zgrid, kappa, taut, Nzcut, (kappa(1) * zgrid(1)))
 !    
-         taur(i, k, 1:Nzcut) = taut(1:Nzcut)
-         tempa = 0.0d0 
+            taur(i, k, 1 : Nzcut) = taut(1 : Nzcut)
 
-!    before we interpolate on the taugrid we need to find out if and how to fill up the last 10 points: 
-         if (taut(3) .lt. taugrid(1)) then 
-          !  here the top has smaller tau ross than top of the grid, need to find out how many points and make an
-          !  additional chunk of the tau grid.
-           ccount = 4
-            do while (taut(ccount) .lt. taugrid(1) ) 
-              ccount = ccount +1
-            end do  
-          ! before we extend the tau grid up, check if it is really necessary, by checking if the tau200 is greater than 0.25
+            call optimal_ray_top(i, k, Ngrid, n_add, toplogunit)
+
+            call resolve_steep_gradients(i, k, nzcut, ngrid, nres, ray_count, nap_tot)
+
+            write(reslogunit, '(3(I3,2x))') i, k, nap_tot
+
+!           now interpolate
+            tempa = 0.0d0 
  
-          if (tau(i,k,ccount - 1) .gt. 0.2 ) then  
-           if (ccount .le. 10 ) then 
-             ttaugrid(1:ccount-1) =  taut(1:ccount-1)
-             ttaugrid(ccount:Ngrid) = taugrid(1:Ngrid-ccount+1) 
+            indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
+            outT(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
 
-           else 
-             step_add = (dlog10(taugrid(1))  -  dlog10(taut(1)))/9.0d0  
-             do tii = 1,  9 
-               ttaugrid(tii) = 10.0**(tau1lg-(10-tii)*step_add )  
-             end do 
-             ttaugrid(10:Ngrid) = taugrid(1:Ngrid-9)
-           endif 
-          else  
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
-          endif 
+            indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
+            outP(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
 
-         else
-           ttaugrid(1:Ngrid) = taugrid(1:Ngrid)
+            indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
+            outrho(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
 
-         end if 
+            indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
+            outz(i, k, 1 : Ngrid) = tempa(1 : Ngrid)
 
+!           store ttaugrid as single precision
+            ttaugrid_sp(i, k, 1 : Ngrid) = ttaugrid(1 : Ngrid)
 
-!        now  interpolate
- 
-           indum = map1(taut, tempt, Nzcut, ttaugrid, tempa, Ngrid)
-           outT(i,k,1:Ngrid) = tempa(1:Ngrid)
+            ray_count = ray_count + 1
 
-           indum = map1(taut, tempp, Nzcut, ttaugrid, tempa, Ngrid)
-           outP(i,k,1:Ngrid) = tempa(1:Ngrid)
-
-           indum = map1(taut, tempr, Nzcut, ttaugrid, tempa, Ngrid)
-           outrho(i,k,1:Ngrid) = tempa(1:Ngrid)
-
-           indum = map1(taut, zgrid, Nzcut, ttaugrid, tempa, Ngrid)
-           outz(i,k,1:Ngrid) = tempa(1:Ngrid)
-  
-
-
-        end do
-      end do
+        enddo
+      enddo
 
 !   2) -----: note if there was no rotation then, taur holds already the rosseland tau, so only tau 200 needs to be calculated. 
      else   
@@ -626,9 +609,6 @@
        close(unit=2)
 
 !-----  finished reading it.
-
-       toplogunit = 1845; open(unit = toplogunit, file = 'tau.top.log.'//trim(no))
-       reslogunit = 1846; open(unit = reslogunit, file = 'tau.res.log.'//trim(no))
 
        Nr = 20
 
@@ -752,65 +732,90 @@
 
 !      Temperature 
        filename='T_onTau.'//trim(filenumber)//'.nc.'//trim(no)
-        call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'T', outT, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'T', outT, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
 !      Presssure  
        filename='P_onTau.'//trim(filenumber)//'.nc.'//trim(no)
-        call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'P', outP, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'P', outP, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
+
 !      density 
        filename='rho_onTau.'//trim(filenumber)//'.nc.'//trim(no)
-        call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'R', outrho, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
-!---- zgrid 
+       call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'R', outrho, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
+!---- zgrid 
        filename='Z_onTau.'//trim(filenumber)//'.nc.'//trim(no)
-        call  create_netcdf(ncid, filename, 'Z',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'Z', outz, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'Z',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'Z', outz, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
        filename='taugrid.'//trim(filenumber)//'.nc.'//trim(no)
-        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'tau', ttaugrid_sp, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'tau', ttaugrid_sp, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
        if (numoutput == 0) then
 
-       Nzz = Nzcut
+           Nzz = Nzcut
 
-!      Original temperature 
-       filename='T.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'T', T, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+           if (ifmu) then
 
-!      Oringial pressure  
-       filename='P.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'P', P, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+!              Original temperature 
+               filename='T.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'T', newT, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
 
-!      Original density 
-       filename='rho.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'R', rho, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+!              Oringial pressure  
+               filename='P.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'P', newP, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
 
-!      original tau rosseland of the cube
-       filename='tauross.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'tau', taur, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+!              Original density 
+               filename='rho.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'R', newrho, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
 
-!      tau200 of the cube
-       filename='tau200.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'tau', tau, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+           else
+
+!              Original temperature 
+               filename='T.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'T', T, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
+
+!              Oringial pressure  
+               filename='P.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'P', P, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
+
+!              Original density 
+               filename='rho.'//trim(filenumber)//'.nc'
+               call create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+               call write_netcdf(ncid, myrank, sizee, 'R', rho, nx, nx, ny, nzz, comm, ier)
+               call close_netcdf(ncid, ier)
+
+           endif
+
+!          original tau rosseland of the cube
+           filename='tauross.'//trim(filenumber)//'.nc'
+           call create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+           call write_netcdf(ncid, myrank, sizee, 'tau', taur, nx, nx, ny, nzz, comm, ier)
+           call close_netcdf(ncid, ier)
+
+!          tau200 of the cube
+           filename='tau200.'//trim(filenumber)//'.nc'
+           call create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
+           call write_netcdf(ncid, myrank, sizee, 'tau', tau, nx, nx, ny, nzz, comm, ier)
+           call close_netcdf(ncid, ier)
 
        endif
 
@@ -1157,8 +1162,8 @@
 
       nap_tot = 0
 
-      idx1 = 67
-      idx2 = 105
+      idx1 = 160
+      idx2 = 271
 
       print_cond = .false.
 
@@ -1267,7 +1272,7 @@
 
             nap = nppi - npto  ! number of added points
 
-            if (nap < 0) then 
+            if (nap <= 0) then
 
                 disallow = .true.
 
@@ -1297,7 +1302,7 @@
 
             if (nap_tot > nres) print*, i, k, ' warning: nap_tot > nres'
 
-                mod_count = mod_count + 1
+            mod_count = mod_count + 1
 
             else
 

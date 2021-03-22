@@ -60,13 +60,14 @@ for i in tqdm(range(0, 512)):
         idxl = []
 
         ntop = 10
-        nres = 50
+        nres = 500
 
         for m in range(lidx, lidx - ntop - nres, -1):
 
             delta = logtauk[m] - logtauk[m - 1]
 
-            if delta - 0.01 <= 1e-3: idxl.append(m)
+            if abs(delta - 0.0001) <= 1e-6: idxl.append(m)
+#            if np.isclose(delta, 0.0001): idxl.append(m)
 
         zk = np.delete(zk, idxl)
         Tk = np.delete(Tk, idxl)

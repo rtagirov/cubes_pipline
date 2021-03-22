@@ -58,8 +58,8 @@ dpn = [0, 1, 2, 3, 4, 5, 6]
 #sys.exit()
 
 #atn = [i for i in range(1, 901)]
-#atn = [i for i in range(1, 101)]
-atn = [i for i in range(1, 401)]
+atn = [i for i in range(1, 101)]
+#atn = [i for i in range(1, 401)]
 #atn = [i for i in range(1, 26)]
 
 f = open('./tau_grid_specs/fail.log', 'r')
@@ -93,19 +93,23 @@ npzdir = './npz_1nm/'
 
 #w = np.loadtxt('./tau_grid_specs/spec.0.' + str(atn[0]), usecols = [0]) / 10.0
 
-#for i, j in itertools.product(range(len(dpn)), range(len(atn))):
+w = np.arange(1805, 3005, 10) / 10.0
 
-#        nums = str(dpn[i]) + '.' + str(atn[j])
+for i, j in itertools.product(range(len(dpn)), range(len(atn))):
+
+        nums = str(dpn[i]) + '.' + str(atn[j])
 
 #        I = np.loadtxt('./tau_grid_specs/spec.' + nums, usecols = [1])
+        I = np.loadtxt('./tau_grid_specs/s.' + nums)
 
 #        ws, Is = mean_within_delta(w, I, float(delta), nums)
 
-#        np.savez(npzdir + 'spec.' + nums, w = ws, I = Is)
+#        np.savez(npzdir + 's.' + nums, w = ws, I = Is)
+        np.savez(npzdir + 's.' + nums, w = w, I = I)
 
 #sys.exit()
 
-w = np.load(npzdir + 'spec.0.' + str(atn[0]) + '.npz')['w']
+w = np.load(npzdir + 's.0.' + str(atn[0]) + '.npz')['w']
 
 I = np.zeros((len(dpn), len(atn), len(w)))
 
@@ -113,7 +117,7 @@ for i, j in itertools.product(range(len(dpn)), range(len(atn))):
 
     nums = str(dpn[i]) + '.' + str(atn[j])
 
-    I[i, j, :] = np.load(npzdir + 'spec.' + nums + '.npz')['I']
+    I[i, j, :] = np.load(npzdir + 's.' + nums + '.npz')['I']
 
 ave = np.zeros((3, len(dpn), len(atn)))
 std = np.zeros((3, len(dpn), len(atn)))
@@ -324,7 +328,8 @@ for j in range(len(atn)):
 #    ax[1].set_xlim(180, 300)
 #    ax[1].set_ylim(0.95, 1.05)
 
-    ax[1].set_ylim(-5000, 14000)
+#    ax[1].set_ylim(-5000, 14000)
+    ax[1].set_ylim(-15000, 14000)
     ax[1].set_xscale('log')
 
     ax[0].xaxis.set_minor_locator(AutoMinorLocator(10))
@@ -375,11 +380,11 @@ for j in range(len(atn)):
             if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.08' + nodps[6])
 #            if sys.argv[1] == 's': ax[1].scatter(tau, T, color = 'k', s = 2, label = '0.07 (172)')
 
-            ax[1].scatter(tau_orig, T_orig + 1000, color = 'cyan', s = 2, label = 'Original')
+            ax[1].scatter(tau_orig, T_orig + 3000, color = 'cyan', s = 2, label = 'Original')
 #        if dpn[i] >= 0 and dpn[i] <= 6: ax[1].plot(tau, T - (7 - dpn[i]) * 500, color = col[i])
         if dpn[i] >= 0 and dpn[i] <= 5:
 
-            ax[1].scatter(tau, T - (6 - dpn[i]) * 1000, color = col[i], s = 2, label = labels[i])
+            ax[1].scatter(tau, T - (6 - dpn[i]) * 3000, color = col[i], s = 2, label = labels[i])
 #        if dpn[i] > 5:                  ax[2].plot(tau, T + (dpn[i] - 5) * 500, color = col[dpn[i] - 6])
 
     ax[1].set_xlim(110.0, 1e-15)

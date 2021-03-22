@@ -19,7 +19,14 @@ snapshot = str(int(np.loadtxt('snapshot.inp')))
 #r1 = random.sample(range(512), int(sys.argv[1]))
 #r2 = random.sample(range(512), int(sys.argv[1]))
 
+#r1 = random.sample(range(512), 10)
+#r2 = random.sample(range(512), 10)
+
 #rr1, rr2, x = np.loadtxt('./ray/tau.res.log.6', unpack = True)
+
+#--------------------------------------------------------
+# get the numbers from the old file
+
 rr1 = np.loadtxt('atm.log', usecols = [0])
 rr2 = np.loadtxt('atm.log', usecols = [1])
 
@@ -28,6 +35,8 @@ i2 = np.unique(rr2, return_index=True)[1]
 
 r1 = [int(rr1[index] - 1) for index in sorted(i1)]
 r2 = [int(rr2[index] - 1) for index in sorted(i2)]
+
+#--------------------------------------------------------
 
 #print(np.array(r1) + 1)
 #print(np.array(r2) + 1)
@@ -50,8 +59,10 @@ r2 = [int(rr2[index] - 1) for index in sorted(i2)]
 
 dpns = np.arange(0, 7)
 #dpns = np.arange(0, 1)
+#dpns = np.arange(0, 1)
 
 for n in tqdm(dpns):
+#for n in dpns:
 
     z = netCDF4.Dataset('./nc/Z_onTau.'   + snapshot + '.nc' + '.' + str(n))['Z']
     T = netCDF4.Dataset('./nc/T_onTau.'   + snapshot + '.nc' + '.' + str(n))['T']
@@ -66,6 +77,10 @@ for n in tqdm(dpns):
     d = np.array(d)
 
     tau = np.array(tau)
+
+#    print(tau[:, 0, 0])
+
+#    sys.exit()
 
     if not os.path.isdir('./atms/' + str(n)):
 
@@ -83,6 +98,8 @@ for n in tqdm(dpns):
 
     for i, j in itertools.product(r1, r2):
 
+#        print(i, j)
+
         zk = z[:, j, i]
         Tk = T[:, j, i]
         pk = p[:, j, i]
@@ -99,13 +116,14 @@ for n in tqdm(dpns):
         idxl = []
 
         ntop = 10
-        nres = 50
+        nres = 500
 
         for m in range(lidx, lidx - ntop - nres, -1):
 
             delta = logtauk[m] - logtauk[m - 1]
 
-            if delta - 0.01 <= 1e-3: idxl.append(m)
+            if abs(delta - 0.0001) <= 1e-6: idxl.append(m)
+#            if np.isclose(delta, 0.0001): idxl.append(m)
 
         zk = np.delete(zk, idxl)
         Tk = np.delete(Tk, idxl)
