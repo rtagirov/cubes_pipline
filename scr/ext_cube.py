@@ -1,22 +1,16 @@
-# program to extract data from FITS files into files to
-# represent a box of the stellar atmosphere
-
 import numpy as np
-import os.path
-import os
-import sys
-import time
-import glob
+import netCDF4 as nc
 
 from astropy.io import fits
-from tqdm import tqdm
 
+import os
+import sys
 import importlib
 import phys
 
 importlib.reload(phys)
 
-def getdata(f):
+def get_fits_data(f):
 
     hdulist = fits.open(f)
 
@@ -26,10 +20,16 @@ def getdata(f):
 
     return a
 
-def swap_axes(a):
+def swap_fits_axes(a):
 
     a = np.swapaxes(a, 0, 2)
     a = np.swapaxes(a, 1, 2)
+
+    return a
+
+def swap_nc_axes(a):
+
+    a = np.swapaxes(a, 0, 2)
 
     return a
 
@@ -65,29 +65,57 @@ for the width and length, dx=dy, the resolution is
 apn - added points number (number of points added when extending an extracted atmospheric structure)
 """
 
-num = str(int(np.loadtxt('snapshot.inp')))
+if len(sys.argv) < 4:
 
-dims = np.loadtxt('dims.inp')
+    print('3 arguments expected: cube number: XXXXXX; format: fits or nc; number of extension points')
 
-dz = dims[3]
-Nz = int(dims[0])
+    sys.exit(1)
 
-apn = Nz - 324
+num  = sys.argv[1]
+form = sys.argv[2]
 
-apm = phys.average_particle_mass(get_abund('abund.inp'))
+if form != 'fits' and form != 'nc':
 
-T = getdata('eosT.'     + num + '.fits')
-p = getdata('eosP.'     + num + '.fits')
-d = getdata('result_0.' + num + '.fits')
+    print('Format is not recognized. Abort.')
 
-T = swap_axes(T)
-p = swap_axes(p)
-d = swap_axes(d)
+    sys.exit(1)
+
+if form == 'fits':
+
+    T = get_fits_data('eosT.'     + num + '.fits')
+    p = get_fits_data('eosP.'     + num + '.fits')
+    d = get_fits_data('result_0.' + num + '.fits')
+
+    T = swap_fits_axes(T)
+    p = swap_fits_axes(p)
+    d = swap_fits_axes(d)
+
+if form == 'nc':
+
+    T = nc.Dataset(num + '.nc')['T']
+    p = nc.Dataset(num + '.nc')['P']
+    d = nc.Dataset(num + '.nc')['R']
+
+    T = np.array(T)
+    p = np.array(p)
+    d = np.array(d)
+
+    T = swap_nc_axes(T)
+    p = swap_nc_axes(p)
+    d = swap_nc_axes(d)
 
 top = len(T[0, 0, :]) - 1
 
 T_top = T[:, :, top]
 p_top = p[:, :, top]
+
+dims = np.loadtxt('dims.inp')
+
+#Nz = int(dims[0])
+apn = int(sys.argv[3])
+dz =  dims[3]
+
+apm = phys.average_particle_mass(get_abund('abund.inp'))
 
 h1d = -np.arange(1, apn + 1) * dz
 
@@ -105,6 +133,12 @@ d_add = apm * p_add / phys.boltz / T_add
 T = np.concatenate((T, T_add), axis = 2)
 p = np.concatenate((p, p_add), axis = 2)
 d = np.concatenate((d, d_add), axis = 2)
+
+#for i in range(len(d[256, 256, :])):
+
+#    print(i, d[256, 256, i])
+
+#sys.exit()
 
 T = T.flatten().astype(np.float32)
 p = p.flatten().astype(np.float32)

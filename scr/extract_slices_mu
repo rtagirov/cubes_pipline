@@ -1,15 +1,33 @@
 #!/bin/bash
 
+if [ $# != 1 ]; then
+
+    echo "nessy or atlas?"
+
+    exit 1
+
+fi
+
+form=$1
+
+if [ $form != nessy ] && [ $form != atlas ]; then
+
+    echo "Format is not recognized. Abort."
+
+    exit 1
+
+fi
+
 #dirs=$(seq 1 9)
-dirs='2 3 5 7 9'
+dirs='1 2 4 6 8'
 
 for d in $dirs; do
 
     cd $d
 
-    rm -f ./atms/* nohup.out
+    rm -f nohup.out
 
-    nohup python extract_slices.py &
+    nohup python extract_slices.py $form &
 
     cd ..
 
@@ -17,12 +35,12 @@ done
 
 wait
 
-mkdir -p atms
+mkdir -p atms/$form
 
-#rm -rf ./atms/*
+rm -rf ./atms/$form/*
 
 for d in $dirs; do
 
-    mv ./$d/atms ./atms/$d
+    mv ./$d/atms/$form ./atms/$form/$d
 
 done

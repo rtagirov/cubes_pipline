@@ -12,7 +12,7 @@ for d in $dirs; do
 
     cd $d
 
-    rm -f tau.out.1 tau.top.log.1 *.nc.1 Header_*
+    rm -f tau.out.1 tau.top.log.1 tau.res.log.1 *.nc.1 Header_*
 
     cp /mnt/SSD/sim/cubes_pipline/src/cpline.exe ./
 

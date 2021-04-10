@@ -325,8 +325,20 @@
          indum = map1(taut, zgrid, Nzcut, onepoint, meanzt, 1 ) 
          summean = summean + meanzt
 !         write(71,*) meanzt 
-        end do 
-      end do 
+        end do
+      end do
+
+     if (tau200 .and. .not. gettaug) then
+
+         open(unit = 1903, file = 'max_tau200.out', access = 'append')
+
+         write(1903, '(E15.7)') maxval(taur(:, :, 2))
+
+         close(1903)
+
+         stop '  max(tau200) calculated'
+
+     endif
 
      summean = summean/(Nx*Ny)
      print*, ' calculated Pivot = ', summean 
@@ -450,10 +462,10 @@
 
          print*, ' Finished calculating tau-200 after rotation' 
  
-     endif 
+     endif ! tau200
 
+   endif ! ifmu
 
-   endif 
 !-------------------------------------------------------------------------!
 !   ----- Do we need to map onto a different tau grid?  ------------------!
 
