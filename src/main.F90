@@ -854,27 +854,50 @@
        write (1,*) Nzz, Nx, Ny, dz, dx, dy
        close(unit=1)
 
-
 !      Temperature 
        filename='T_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'T', newT, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'T', newT, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
 !      Presssure  
        filename='P_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'P', newP, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'P', newP, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
+
 !      density 
        filename='rho_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
-        call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
-        call write_netcdf(ncid, myrank, sizee, 'R', newrho, nx, nx, ny, nzz, comm, ier)
-        call close_netcdf(ncid, ier)
+       call  create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'R', newrho, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
 
+     else
 
-     end if 
+       Nzz = Nz
 
+!----  need to get mu as a number for the file name:
+       call str(int(mu*10), numberx)
+
+!      Original temperature 
+       filename='T_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
+       call create_netcdf(ncid, filename, 'T',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'T', T, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
+
+!      Oringial pressure  
+       filename='P_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
+       call create_netcdf(ncid, filename, 'P',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'P', P, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
+
+!      Original density 
+       filename='rho_mu_'//trim(numberx)//'.'//trim(filenumber)//'.nc'
+       call create_netcdf(ncid, filename, 'R',  nx, ny, nzz, ier)
+       call write_netcdf(ncid, myrank, sizee, 'R', rho, nx, nx, ny, nzz, comm, ier)
+       call close_netcdf(ncid, ier)
+
+     endif 
 
      print*, ' all done, tidying up!' 
 !------ tidy up ! ---------- never leave a mess ;) ---------------------!

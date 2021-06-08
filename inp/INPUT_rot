@@ -1,0 +1,9 @@
+!--- control file for calculations : 
+1      !--1 is binary, 2 is mpi read, 3 is fits files
+1      ! rotation on/ off (1/ 0 )
+1.0    ! viewing angle mu
+0      ! calculate tau200 on/off
+0      ! interpolation onto tau rosseland girf on/off
+0.0
+-9.5 0.12 1.3
+1

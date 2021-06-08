@@ -3,7 +3,7 @@ import netCDF4 as nc
 import matplotlib.pyplot as plt
 import numpy as np
 
-from tqdm import tqdm
+#from tqdm import tqdm
 
 from scipy import interpolate
 
@@ -14,31 +14,59 @@ import sys
 import os
 import pathlib
 
-if len(sys.argv) < 2: print('Extracting for NESSY or for ATLAS?')
+if len(sys.argv) < 3:
+
+    print('expecting at least two arguments: format and mode')
+
+    sys.exit(1)
 
 form = sys.argv[1]
+mode = sys.argv[2]
 
-if form != 'nessy' and form != 'atlas': print('Format name not recognized. Abort.')
+if form != 'nessy'  and form != 'atlas':
+
+    print('format not recognized')
+
+    sys.exit(1)
+
+if mode != 'noitrp' and mode != 'itrp':
+
+    print('mode not recognized')
+
+    sys.exit(1)
+
+if mode == 'noitrp' and len(sys.argv) < 4:
+
+    print('expecting one more argument: angle')
+
+    sys.exit(1)
+
+if mode == 'noitrp': mu = sys.argv[3]
 
 Nx = 512
 Ny = 512
 
-snapshot = str(int(np.loadtxt('snapshot.inp')))
+snapshot = open('snapshot.inp', 'r').readlines()[0][:6]
 
-z = nc.Dataset('./Z_onTau.'   + snapshot + '.nc' + '.1')['Z']
-T = nc.Dataset('./T_onTau.'   + snapshot + '.nc' + '.1')['T']
-p = nc.Dataset('./P_onTau.'   + snapshot + '.nc' + '.1')['P']
-d = nc.Dataset('./rho_onTau.' + snapshot + '.nc' + '.1')['R']
+if mode == 'itrp':
 
-tau = nc.Dataset('./taugrid.' + snapshot + '.nc' + '.1')['tau'] 
+    z = np.array(nc.Dataset('./Z_onTau.'   + snapshot + '.nc' + '.1')['Z'])
+    T = np.array(nc.Dataset('./T_onTau.'   + snapshot + '.nc' + '.1')['T'])
+    p = np.array(nc.Dataset('./P_onTau.'   + snapshot + '.nc' + '.1')['P'])
+    d = np.array(nc.Dataset('./rho_onTau.' + snapshot + '.nc' + '.1')['R'])
 
-#z = np.array(z) / 1e+5
-z = np.array(z)
-T = np.array(T)
-p = np.array(p)
-d = np.array(d)
+    tau = np.array(nc.Dataset('./taugrid.' + snapshot + '.nc' + '.1')['tau'])
 
-tau = np.array(tau)
+if mode == 'noitrp':
+
+    T = np.array(nc.Dataset('./T_mu_'   + mu + '.' + snapshot + '.nc')['T'])
+    p = np.array(nc.Dataset('./P_mu_'   + mu + '.' + snapshot + '.nc')['P'])
+    d = np.array(nc.Dataset('./rho_mu_' + mu + '.' + snapshot + '.nc')['R'])
+
+    dz = np.loadtxt('dims.inp')[3]
+
+#    z = np.arange(len(T[:, 0, 0]) - 1, -1, -1) * dz / (float(mu) / 10.0)
+    z = np.arange(len(T[:, 0, 0]) - 1, -1, -1) * dz
 
 if not os.path.isdir('./atms/' + form):
 
@@ -46,40 +74,45 @@ if not os.path.isdir('./atms/' + form):
 
 dpn = np.zeros((Nx, Ny)).astype(int)
 
-for i in tqdm(range(0, Nx)):
+for i in range(0, Nx):
 
     for j in range(0, Ny):
 
-        height = z[:, j, i]
         temp =   T[:, j, i]
         pres =   p[:, j, i]
         dens =   d[:, j, i]
 
-        height = np.abs(height - np.max(height))
+        if mode == 'itrp':
 
-        tauk = tau[:, j, i]
+            height = z[:, j, i]
 
-        logtauk = np.log10(tauk)
+            height = np.abs(height - np.max(height))
 
-        lidx = len(logtauk) - 1
+            tauk = tau[:, j, i]
 
-        idxl = []
+            logtauk = np.log10(tauk)
 
-        ntop = 10
-        nres = 500
+            lidx = len(logtauk) - 1
 
-        for m in range(lidx, lidx - ntop - nres, -1):
+            idxl = []
 
-            delta = logtauk[m] - logtauk[m - 1]
+            ntop = 10
+            nres = 500
 
-            if abs(delta - 0.0001) <= 1e-6: idxl.append(m)
+            for m in range(lidx, lidx - ntop - nres, -1):
 
-        height = np.delete(height, idxl)
-        temp =   np.delete(temp, idxl)
-        pres =   np.delete(pres, idxl)
-        dens =   np.delete(dens, idxl)
+                delta = logtauk[m] - logtauk[m - 1]
 
-        height = height - np.min(height)
+                if abs(delta - 0.0001) <= 1e-6: idxl.append(m)
+
+            height = np.delete(height, idxl)
+            temp =   np.delete(temp, idxl)
+            pres =   np.delete(pres, idxl)
+            dens =   np.delete(dens, idxl)
+
+            height = height - np.min(height)
+
+        if mode == 'noitrp': height = z
 
         if form == 'atlas':
 
@@ -110,6 +143,8 @@ for i in tqdm(range(0, Nx)):
 
             coldens = f(height)
 
+            if coldens[0] <= 0.0: coldens[0] = coldensc[0]
+
         if j == 0: atm = open('./atms/' + form + '/' + str(i + 1), 'w')
         if j != 0: atm = open('./atms/' + form + '/' + str(i + 1), 'a')
 
@@ -117,13 +152,13 @@ for i in tqdm(range(0, Nx)):
 
         atm.write(str(j + 1) + ' ' + str(len(height)) + "\n")
 
-        if (form == 'nessy'):
+        if form == 'nessy':
 
             np.savetxt(atm, \
                        np.column_stack([height / 1e+5, temp, pres, dens]), \
                        fmt = ('%11.6f', '%12.6f', '%7.5e', '%7.5e'), delimiter = '  ')
 
-        if (form == 'atlas'):
+        if form == 'atlas':
 
             np.savetxt(atm, \
                        np.column_stack([coldens, temp, pres, zero, zero, zero, zero]), \

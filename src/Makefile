@@ -25,4 +25,4 @@ initcalc.o : initcalc.f90
  
 # ========================================================================
 clean:
-	rm -f *~ *.o *.mod main~  
+	rm -f *~ *.o *.mod main~ cpline.exe

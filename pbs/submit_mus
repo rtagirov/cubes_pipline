@@ -1,0 +1,25 @@
+#!/bin/bash
+
+submit_mu metallicity/mh0-300/308000
+
+submit_mu metallicity/mh0-hyd/230777
+submit_mu metallicity/mh0-hyd/233100
+submit_mu metallicity/mh0-hyd/235427
+
+submit_mu metallicity/mh0-ssd/237495
+submit_mu metallicity/mh0-ssd/244258
+submit_mu metallicity/mh0-ssd/251568
+
+submit_mu metallicity/mh1-300/182000
+
+submit_mu metallicity/mh1-hyd/004661
+submit_mu metallicity/mh1-hyd/007049  
+submit_mu metallicity/mh1-hyd/009383
+
+submit_mu metallicity/mh1-ssd/536452
+submit_mu metallicity/mh1-ssd/542081
+submit_mu metallicity/mh1-ssd/547390
+
+#submit_mu matthias_ext/hydro/123000
+#submit_mu matthias_ext/ssd/186000
+#submit_mu matthias_ext/300G/118000
