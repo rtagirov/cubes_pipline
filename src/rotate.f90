@@ -23,7 +23,8 @@
    theta = acos(mu)
    pivotdx = tan(theta) * pivot
    newdx = dz * sin(theta)
-   Nzcut = min(int(Nz * (0.9d0/mu)), int(3.5*Nz))
+!   Nzcut = min(int(Nz * (0.9d0/mu)), int(3.5*Nz))
+   Nzcut = int(Nz * (0.9d0 / mu))
 
 !   ---  allocate rotation arrays
 !   call set_muarray(Nzcut)

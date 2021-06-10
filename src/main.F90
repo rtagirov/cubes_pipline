@@ -156,8 +156,9 @@
 
 !---- for tau - integration we do not need the whole depth of the cube
 !--- set depth of temporary arrays
-   if (ifmu ) then  
-     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz) )
+   if (ifmu) then
+!     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz) )
+     Nzcut = int(Nz * (0.9d0 / mu))
    else
      mu = 1.0
      Nzcut = Nz ! int(Nz/2)
@@ -398,7 +399,8 @@
      call rotate_cube(mu, pivot, nx, ny, nz, dx, dy, dz)  
 !---- after rotation was performed, the arrays are stored in newT, newP, newrho!
 ! okey so now we actually have Nzcut points in the vertical direction
-     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz)) 
+!     Nzcut = min(int( Nz * (0.9d0/mu)), int(3.5*Nz)) 
+     Nzcut = int(Nz * (0.9d0 / mu))
 !
      print*,  ' Finished rotation' 
 
