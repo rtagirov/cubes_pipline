@@ -1,0 +1,19 @@
+#!/bin/bash
+
+dirs=$(ls -d mh*)
+
+for d in $dirs; do
+
+    cd $d
+
+    nums=$(ls)
+
+    for n in $nums; do
+
+        cp -v ../../metallicity/$d/$n/dims.inp $n
+
+    done
+
+    cd ..
+
+done

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+declare -i mu_id
+
+dirs=$(ls -d mh*)
+
+mu_ids='2 4 6 8 10'
+
+for d in $dirs; do
+
+    cd $d
+
+    nums=$(ls -d *)
+
+    for n in $nums; do
+
+        for mu_id in $mu_ids; do
+
+            if ((mu_id == 2)); then
+
+                echo -n "$d/$n/$mu_id: "
+
+    #            tail -3 $n/$mu_id/INPUT | head -1
+
+                 grep pivot $n/$mu_id/cpline.log | awk '{print $7}'
+
+    #            echo "--------------------"
+
+            fi
+
+        done
+
+    done
+
+    cd ..
+
+done
