@@ -23,7 +23,8 @@ for f in $files; do
     ln -s ../cube_small.${num}.nc ./${num}.nc
 
     ln -s $inp/abund_cubes_veronika.dat ./abund.inp
-    ln -s $inp/dims.inp                 ./
+#    ln -s $inp/dims.inp                 ./
+    cp -v $inp/dims.inp                 ./
 
 #    rm -f ext_cube.py det_ext.sh aux_func.sh
 
