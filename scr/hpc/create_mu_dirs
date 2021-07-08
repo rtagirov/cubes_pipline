@@ -10,7 +10,8 @@ cubes=/rds/general/user/rtagirov/ephemeral/cubes/metallicity
 
 declare -i mu_id
 
-dirs=$(ls -d mh*)
+#dirs=$(ls -d mh5*)
+dirs=mh0-300-no-ext
 #dirs=mh1-hyd
 #dirs='300G hydro ssd'
 
