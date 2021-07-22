@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+ 
+   echo expecting 1 argument: run=folder/cube/snapshot_number
+ 
+   exit 1
+ 
+fi
+
+run=$1
+
+walltime=24:00:00
+
+ldo=$HOME/log/cpline/$run/out
+lde=$HOME/log/cpline/$run/err
+
+mkdir -p $ldo $lde
+
+rm -f $ldo/*
+rm -f $lde/*
+
+IFS='/' read -r -a array <<< "$run"
+
+name=${array[0]}/${array[1]}
+
+#qsub -v \
+#run=$run \
+#-J 1-10:1 \
+#-o $ldo \
+#-e $lde \
+#-N $name \
+#-lwalltime=$walltime \
+#-lselect=1:ncpus=1:mem=12gb:avx2=true run_mu
+
+sbatch -J $name \
+       --export=run=$run \
+       -a 2-2:2 \
+       -A dirac-dp100-cpu \
+       -p skylake-himem \
+       -n 1 -c 1 \
+       --mem 14gb \
+       -t 24:00:00 \
+       -o $ldo/%A[%a] -e $lde/%A[%a] run_mu

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#parsed by qsub
+#run
+
+#module load intel-suite
+#module load anaconda/3.2019-10
+
+mu_id=$SLURM_ARRAY_TASK_ID
+
+#base=$HOME/cubes/metallicity
+#base=$HOME/cubes
+#base=/rds/general/user/rtagirov/ephemeral/cubes
+base=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes
+
+dir=$base/$run/$mu_id
+
+cd $dir
+
+#tmp=$TMPDIR
+
+#ln -s $dir/* $tmp
+
+#/usr/bin/time -v $tmp/cpline.exe > $tmp/cpline.log 2>&1
+./cpline.exe > cpline.log 2>&1
+
+#python extract_slices.py atlas noitrp $mu_id
+python extract_slices.py nessy itrp
+#python extract_atms.py nessy 10
+#python extract_atms.py atlas 10
+
+#rsync -aq --no-links $tmp/ $dir/
+
+#module purge
