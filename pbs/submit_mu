@@ -1,5 +1,21 @@
 #!/bin/bash
 
+if [ $HOME == /rds/general/user/rtagirov/home ]; then
+
+    host=imperial
+
+elif [ $HOME == /home/dc-tagi1 ]; then
+
+    host=dirac_cambridge
+
+else
+
+    echo "Host not recognized. Abort."
+
+    exit 1
+
+fi
+
 if [ $# != 1 ]; then
  
    echo expecting 1 argument: run=folder/cube/snapshot_number
@@ -24,11 +40,28 @@ IFS='/' read -r -a array <<< "$run"
 
 name=${array[0]}/${array[1]}
 
+if [ $host == imperial ]; then
+
 qsub -v \
-run=$run \
+host=$host,run=$run \
+-N $name \
 -J 1-10:1 \
 -o $ldo \
 -e $lde \
--N $name \
 -lwalltime=$walltime \
 -lselect=1:ncpus=1:mem=12gb:avx2=true run_mu
+
+elif [ $host == dirac_cambridge ]; then
+
+sbatch \
+--export=host=$host,run=$run \
+-J $name \
+-a 2-2:2 \
+-A dirac-dp100-cpu \
+-p skylake-himem \
+-o $ldo/%A[%a] \
+-e $lde/%A[%a] \
+-t 24:00:00 \
+-n 1 -c 1 --mem 14gb run_mu
+
+fi

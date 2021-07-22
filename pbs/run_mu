@@ -1,31 +1,53 @@
 #!/bin/bash
 
 #parsed by qsub
+#host
 #run
 
-module load intel-suite
-module load anaconda3/personal
+if [ $host == imperial ]; then
 
-mu_id=$PBS_ARRAY_INDEX
+    module load intel-suite
+    module load anaconda3/personal
 
-#base=$HOME/cubes/metallicity
-#base=$HOME/cubes
-base=/rds/general/user/rtagirov/ephemeral/cubes
+    mu_id=$PBS_ARRAY_INDEX
 
-dir=$base/$run/$mu_id
+#   base=$HOME/cubes/metallicity
+#   base=$HOME/cubes
+    base=/rds/general/user/rtagirov/ephemeral/cubes
 
-tmp=$TMPDIR
+    dir=$base/$run/$mu_id
 
-ln -s $dir/* $tmp
+    tmp=$TMPDIR
+
+    ln -s $dir/* $tmp
+
+elif [ $host == dirac_cambridge ]; then
+
+    mu_id=$SLURM_ARRAY_TASK_ID
+
+#   base=$HOME/cubes/metallicity
+#   base=$HOME/cubes
+#   base=/rds/general/user/rtagirov/ephemeral/cubes
+    base=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes
+
+    dir=$base/$run/$mu_id
+
+    cd $dir
+
+fi
 
 #/usr/bin/time -v $tmp/cpline.exe > $tmp/cpline.log 2>&1
 ./cpline.exe > cpline.log 2>&1
 
-python extract_slices.py atlas noitrp $mu_id
-#python extract_slices.py nessy
+#python extract_slices.py atlas noitrp $mu_id
+python extract_slices.py nessy itrp
 #python extract_atms.py nessy 10
 #python extract_atms.py atlas 10
 
-rsync -aq --no-links $tmp/ $dir/
+if [ $host == imperial ]; then
 
-module purge
+    rsync -aq --no-links $tmp/ $dir/
+
+    module purge
+
+fi
