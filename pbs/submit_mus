@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #submit_mu metallicity/mh0-300/308000
-submit_mu metallicity/mh0-300-no-ext/308000
+#submit_mu metallicity/mh0-300-no-ext/308000
 
 #submit_mu metallicity/mh0-hyd/230777
 #submit_mu metallicity/mh0-hyd/233100
@@ -40,3 +40,9 @@ submit_mu metallicity/mh0-300-no-ext/308000
 #submit_mu metallicity/mh5-300/635000
 #submit_mu metallicity/mh5-300/637500
 #submit_mu metallicity/mh5-300/640000
+
+#-------------------------------------------
+
+submit_mu veronika/G2V/hydro/214519
+submit_mu veronika/G2V/ssd/222809
+submit_mu veronika/G2V/300G/627321

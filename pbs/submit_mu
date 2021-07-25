@@ -45,7 +45,7 @@ if [ $host == imperial ]; then
 qsub -v \
 host=$host,run=$run \
 -N $name \
--J 1-10:1 \
+-J 2-10:2 \
 -o $ldo \
 -e $lde \
 -lwalltime=$walltime \
@@ -56,7 +56,7 @@ elif [ $host == dirac_cambridge ]; then
 sbatch \
 --export=host=$host,run=$run \
 -J $name \
--a 2-2:2 \
+-a 2-10:2 \
 -A dirac-dp100-cpu \
 -p skylake-himem \
 -o $ldo/%A[%a] \
