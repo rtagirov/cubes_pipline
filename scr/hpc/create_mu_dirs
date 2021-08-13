@@ -6,10 +6,11 @@ exe=${HOME}/cubes_pipline/src/cpline.exe
 
 #cubes=${HOME}/cubes/metallicity
 #cubes=/rds/general/user/rtagirov/ephemeral/cubes/metallicity
-cubes=/rds/general/user/rtagirov/ephemeral/cubes/veronika/G2V
+#cubes=/rds/general/user/rtagirov/ephemeral/cubes/veronika/G2V
 #cubes=${HOME}/cubes/matthias
 #cubes=${HOME}/cubes/veronika/G2V
 #cubes=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes/matthias
+cubes=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes/veronika/G2V
 
 declare -i mu_id
 
