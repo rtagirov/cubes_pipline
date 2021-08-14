@@ -45,11 +45,11 @@ if [ $host == imperial ]; then
 qsub -v \
 host=$host,run=$run \
 -N $name \
--J 2-10:2 \
+-J 2-4:2 \
 -o $ldo \
 -e $lde \
 -lwalltime=$walltime \
--lselect=1:ncpus=1:mem=12gb:avx2=true run_mu
+-lselect=1:ncpus=1:mem=14gb:avx2=true run_mu
 
 elif [ $host == dirac_cambridge ]; then
 

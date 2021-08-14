@@ -12,8 +12,8 @@ if [ $host == imperial ]; then
     mu_id=$PBS_ARRAY_INDEX
 
 #   base=$HOME/cubes/metallicity
-#   base=$HOME/cubes
-    base=/rds/general/user/rtagirov/ephemeral/cubes
+   base=$HOME/cubes
+#    base=/rds/general/user/rtagirov/ephemeral/cubes
 
     dir=$base/$run/$mu_id
 
