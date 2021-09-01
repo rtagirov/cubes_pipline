@@ -6,8 +6,8 @@ exe=${HOME}/cubes_pipline/src/cpline.exe
 
 #cubes=${HOME}/cubes/metallicity
 #cubes=/rds/general/user/rtagirov/ephemeral/cubes/metallicity
-#cubes=/rds/general/user/rtagirov/ephemeral/cubes/veronika/G2V
-cubes=${HOME}/cubes/matthias
+cubes=/rds/general/user/rtagirov/ephemeral/cubes/veronika/G2V
+#cubes=${HOME}/cubes/matthias
 #cubes=${HOME}/cubes/matthias_ext
 #cubes=${HOME}/cubes/veronika/G2V
 #cubes=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes/matthias

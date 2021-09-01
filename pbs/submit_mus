@@ -24,8 +24,8 @@
 #-------------------------------------------
 
 #submit_mu matthias_ext/hydro/123000
-submit_mu matthias_ext/ssd/186000
-submit_mu matthias_ext/300G/118000
+#submit_mu matthias_ext/ssd/186000
+#submit_mu matthias_ext/300G/118000
 
 #-------------------------------------------
 
@@ -43,6 +43,6 @@ submit_mu matthias_ext/300G/118000
 
 #-------------------------------------------
 
-#submit_mu veronika/G2V/hydro/214519
-#submit_mu veronika/G2V/ssd/222809
-#submit_mu veronika/G2V/300G/627321
+submit_mu veronika/G2V/hydro/214519
+submit_mu veronika/G2V/ssd/222809
+submit_mu veronika/G2V/300G/627321
