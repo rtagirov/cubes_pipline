@@ -14,12 +14,13 @@ FFLAGS = "-c"# -traceback  -heap-arrays -check bounds"
 #INCLUDE="-I/home/rtagirov/lib/include"
 #NETCDFLIB="-L../netcdf -lnet -L/home/rtagirov/lib/lib -lnetcdf"
 
-NFDIR=/apps/netcdf/4.0.1-mcmodel-medium
+#NFDIR=/apps/netcdf/4.0.1-mcmodel-medium
 #NFDIR=/usr/local/software/spack/spack-0.11.2/opt/spack/linux-rhel7-x86_64/intel-17.0.4/netcdf-fortran-4.4.4-cesnirf36s5woa3kex3oemvb5hfeutwn
+NFDIR=${HOME}/libraries/lib_netcdf
 
 INCLUDE="-I${NFDIR}/include"
-#NETCDFLIB="-L../netcdf -lnet -L${NFDIR}/lib -lnetcdf"
-NETCDFLIB="-L../netcdf -lnet -L${NFDIR}/lib -lnetcdff"
+NETCDFLIB="-L../netcdf -lnet -L${NFDIR}/lib -lnetcdf"
+#NETCDFLIB="-L../netcdf -lnet -L${NFDIR}/lib -lnetcdff"
 ####################################################################
 
 SUBDIRS = netcdf  src

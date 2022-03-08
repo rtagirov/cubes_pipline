@@ -1,10 +1,14 @@
 #!/bin/bash
 
-if [ $HOME == /rds/general/user/rtagirov/home ]; then
+if [[ $HOME == /rds/general/user/rtagirov/home ]]; then
 
     host=imperial
 
-elif [ $HOME == /home/dc-tagi1 ]; then
+elif [[ $HOME == /home/dc-tagi1 ]] && [[ $(hostname) == *dirac* ]]; then
+
+    host=dirac_leicester
+
+elif [[ $HOME == /home/dc-tagi1 ]] && [[ $(hostname) == *login* ]]; then
 
     host=dirac_cambridge
 
@@ -26,7 +30,7 @@ fi
 
 run=$1
 
-walltime=24:00:00
+walltime=2:00:00
 
 ldo=$HOME/log/cpline/$run/out
 lde=$HOME/log/cpline/$run/err
@@ -38,7 +42,7 @@ rm -f $lde/*
 
 IFS='/' read -r -a array <<< "$run"
 
-name=${array[0]}/${array[1]}
+name=${array[0]}/${array[1]}/${array[2]}
 
 if [ $host == imperial ]; then
 
@@ -51,6 +55,17 @@ host=$host,run=$run \
 -lwalltime=$walltime \
 -lselect=1:ncpus=1:mem=14gb:avx2=true run_mu
 
+elif [ $host == dirac_leicester ]; then
+
+qsub -v \
+host=$host,run=$run \
+-A dp100 \
+-N $name \
+-t 8 \
+-o $ldo \
+-e $lde \
+-l walltime=$walltime,nodes=1:ppn=1,mem=14gb run_mu
+
 elif [ $host == dirac_cambridge ]; then
 
 sbatch \
@@ -61,7 +76,7 @@ sbatch \
 -p skylake-himem \
 -o $ldo/%A[%a] \
 -e $lde/%A[%a] \
--t 24:00:00 \
+-t $walltime \
 -n 1 -c 1 --mem 14gb run_mu
 
 fi

@@ -43,6 +43,6 @@
 
 #-------------------------------------------
 
-submit_mu veronika/G2V/hydro/214519
+#submit_mu veronika/G2V/hydro/214519
 submit_mu veronika/G2V/ssd/222809
-submit_mu veronika/G2V/300G/627321
+#submit_mu veronika/G2V/300G/627321

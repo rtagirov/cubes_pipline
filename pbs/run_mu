@@ -1,5 +1,20 @@
 #!/bin/bash
 
+conda_init()
+{
+__conda_setup="$('/cm/shared/apps/python/intelpython37/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/cm/shared/apps/python/intelpython37/etc/profile.d/conda.sh" ]; then
+        . "/cm/shared/apps/python/intelpython37/etc/profile.d/conda.sh"
+    else
+        export PATH="/cm/shared/apps/python/intelpython37/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+}
+
 #parsed by qsub
 #host
 #run
@@ -20,6 +35,34 @@ if [ $host == imperial ]; then
     tmp=$TMPDIR
 
     ln -s $dir/* $tmp
+
+elif [ $host == dirac_leicester ]; then
+
+    module load intel/compilers/17.0.4
+    module load python/intel/3.7
+
+    conda_init
+
+#    conda init bash
+
+#    bash
+
+    conda activate py3.8.3
+
+    mu_id=$PBS_ARRAYID
+
+#   base=$HOME/cubes/metallicity
+#   base=$HOME/cubes
+#    base=/rds/general/user/rtagirov/ephemeral/cubes
+    base=/scratch/dp100/dc-tagi1/cubes
+
+    dir=$base/$run/$mu_id
+
+    tmp=$TMPDIR
+
+    ln -s $dir/* $tmp
+
+    cd $tmp
 
 elif [ $host == dirac_cambridge ]; then
 
@@ -44,7 +87,7 @@ python extract_slices.py nessy itrp
 #python extract_atms.py nessy 10
 #python extract_atms.py atlas 10
 
-if [ $host == imperial ]; then
+if [[ $host == imperial ]] || [[ $host == dirac_leicester ]]; then
 
     rsync -aq --no-links $tmp/ $dir/
 
