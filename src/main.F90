@@ -337,7 +337,7 @@
 
          close(1903)
 
-         stop '  max(tau200) calculated'
+!         stop '  max(tau200) calculated'
 
      endif
 
@@ -826,7 +826,7 @@
            call close_netcdf(ncid, ier)
 
 !          tau200 of the cube
-           filename='tau200.'//trim(filenumber)//'.nc'
+           filename='result_ttau200.'//trim(filenumber)//'.nc'
            call create_netcdf(ncid, filename, 'tau',  nx, ny, nzz, ier)
            call write_netcdf(ncid, myrank, sizee, 'tau', tau, nx, nx, ny, nzz, comm, ier)
            call close_netcdf(ncid, ier)
