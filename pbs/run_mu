@@ -26,9 +26,9 @@ if [ $host == imperial ]; then
 
     mu_id=$PBS_ARRAY_INDEX
 
-#   base=$HOME/cubes/metallicity
-#   base=$HOME/cubes
-    base=/rds/general/user/rtagirov/ephemeral/cubes
+#    base=$HOME/cubes/metallicity
+    base=$HOME/cubes
+#    base=/rds/general/user/rtagirov/ephemeral/cubes
 
     dir=$base/$run/$mu_id
 
@@ -83,6 +83,7 @@ fi
 ./cpline.exe > cpline.log 2>&1
 
 #python extract_slices.py atlas noitrp $mu_id
+#python extract_slices.py atlas itrp $mu_id
 python extract_slices.py nessy itrp
 #python extract_atms.py nessy 10
 #python extract_atms.py atlas 10

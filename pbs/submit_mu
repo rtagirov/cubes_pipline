@@ -42,7 +42,7 @@ rm -f $lde/*
 
 IFS='/' read -r -a array <<< "$run"
 
-name=${array[0]}/${array[1]}/${array[2]}
+name=${array[0]}-${array[1]}-${array[2]}
 
 if [ $host == imperial ]; then
 

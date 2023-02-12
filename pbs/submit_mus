@@ -44,5 +44,19 @@
 #-------------------------------------------
 
 #submit_mu veronika/G2V/hydro/214519
-submit_mu veronika/G2V/ssd/222809
+#submit_mu veronika/G2V/ssd/222809
 #submit_mu veronika/G2V/300G/627321
+
+#-------------------------------------------
+
+submit_mu veronika_lowest_point/G2V/300G/627321
+submit_mu veronika_lowest_point/G2V/ssd/222809
+
+#-------------------------------------------
+
+#submit_mu T10P10D10/G2V/300G/627321
+#submit_mu T10P20D20/G2V/300G/627321
+#submit_mu T20P10D10/G2V/300G/627321
+#submit_mu T20P20D20/G2V/300G/627321
+
+#submit_mu TmaxPmaxDmax/G2V/300G/627321

@@ -7,10 +7,14 @@ exe=${HOME}/cubes_pipline/src/cpline.exe
 #cubes=${HOME}/cubes/metallicity
 #cubes=/rds/general/user/rtagirov/ephemeral/cubes/metallicity
 #cubes=/rds/general/user/rtagirov/ephemeral/cubes/veronika/G2V
-cubes=/scratch/dp100/dc-tagi1/cubes/veronika/G2V
+#cubes=/scratch/dp100/dc-tagi1/cubes/veronika/G2V
 #cubes=${HOME}/cubes/matthias
 #cubes=${HOME}/cubes/matthias_ext
-#cubes=${HOME}/cubes/veronika/G2V
+#cubes=${HOME}/cubes/veronika_lowest_point/G2V
+#cubes=${HOME}/cubes/T10P10D10/G2V
+#cubes=${HOME}/cubes/T20P10D10/G2V
+#cubes=${HOME}/cubes/T20P20D20/G2V
+cubes=${HOME}/cubes/TmaxPmaxDmax/G2V
 #cubes=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes/matthias
 #cubes=${HOME}/rds/rds-dirac-dp100-n0fcCTMMDq4/dc-tagi1/cubes/veronika/G2V
 
@@ -20,7 +24,8 @@ declare -i mu_id
 #dirs=mh0-300-no-ext
 #dirs=mh1-hyd
 #dirs='300G hydro ssd'
-dirs='300G ssd'
+#dirs='300G ssd'
+dirs='300G'
 #dirs='hydro'
 
 #mu_ids='1 3 5 7 9'
